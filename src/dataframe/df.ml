@@ -1,18 +1,5 @@
 open Base
 
-(* TODO: use a compact version of this. *)
-module Bool_array : sig
-  type t
-
-  val create : len:int -> bool -> t
-  val copy : t -> t
-end = struct
-  type t = bool array
-
-  let create = Array.create
-  let copy = Array.copy
-end
-
 type t =
   { columns : (string, Column.packed, String.comparator_witness) Map.t
   ; filter : Bool_array.t
@@ -90,10 +77,15 @@ let to_aligned_rows t =
   in
   let rows =
     List.init (num_rows t) ~f:(fun j ->
-        Array.mapi named_columns ~f:(fun i (_, column) ->
-            let str = Column.packed_get_string column j |> escape in
-            max_len_per_column.(i) <- max max_len_per_column.(i) (String.length str);
-            str))
+        if Bool_array.get t.filter j
+        then
+          Array.mapi named_columns ~f:(fun i (_, column) ->
+              let str = Column.packed_get_string column j |> escape in
+              max_len_per_column.(i) <- max max_len_per_column.(i) (String.length str);
+              str)
+          |> Option.some
+        else None)
+    |> List.filter_opt
   in
   let header = Array.map named_columns ~f:fst in
   let delim = Array.map max_len_per_column ~f:(fun l -> String.make (l + 1) '-') in
@@ -105,8 +97,7 @@ let to_aligned_rows t =
       |> String.concat_array)
 
 let copy t =
-  (* TODO: only copy the filtered rows. *)
-  { columns = Map.map t.columns ~f:Column.packed_copy
+  { columns = Map.map t.columns ~f:Column.(packed_copy ~filter:t.filter)
   ; filter = Bool_array.copy t.filter
   ; length = t.length
   }

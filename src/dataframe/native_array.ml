@@ -8,7 +8,24 @@ module Make (E : Array_intf.Elt) :
 
   let create v ~len = Array.create v ~len
   let of_array = Fn.id
-  let copy = Array.copy
+
+  let copy ?filter t =
+    match filter with
+    | None -> Array.copy t
+    | Some filter ->
+      let num_set = Bool_array.num_set filter in
+      if num_set = 0
+      then [||]
+      else (
+        let res = Array.create t.(0) ~len:num_set in
+        let res_index = ref 0 in
+        Array.iteri t ~f:(fun i v ->
+            if Bool_array.get filter i
+            then (
+              res.(!res_index) <- v;
+              Int.incr res_index));
+        res)
+
   let length = Array.length
   let get = Array.get
   let set = Array.set
@@ -34,7 +51,25 @@ module MakeOption (E : Array_intf.Elt) :
 
   let create v ~len = Option_array.init len ~f:(Fn.const v)
   let of_array vs = Option_array.init (Array.length vs) ~f:(fun i -> vs.(i))
-  let copy = Option_array.copy
+
+  let copy ?filter t =
+    match filter with
+    | None -> Option_array.copy t
+    | Some filter ->
+      let num_set = Bool_array.num_set filter in
+      if num_set = 0
+      then Option_array.empty
+      else (
+        let res = Option_array.create ~len:num_set in
+        let res_index = ref 0 in
+        for i = 0 to Option_array.length t - 1 do
+          if Bool_array.get filter i
+          then (
+            Option_array.set res !res_index (Option_array.get res i);
+            Int.incr res_index)
+        done;
+        res)
+
   let length = Option_array.length
   let get = Option_array.get
   let set = Option_array.set

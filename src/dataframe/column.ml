@@ -21,10 +21,10 @@ let of_array : type a b.
   let (module M) = mod_ in
   { mod_; data = M.of_array vs }
 
-let copy : type a b. (a, b) t -> (a, b) t =
- fun t ->
+let copy : type a b. ?filter:Bool_array.t -> (a, b) t -> (a, b) t =
+ fun ?filter t ->
   let (module M) = t.mod_ in
-  { mod_ = t.mod_; data = M.copy t.data }
+  { mod_ = t.mod_; data = M.copy ?filter t.data }
 
 let get : type a b. (a, b) t -> int -> a =
  fun t i ->
@@ -73,7 +73,7 @@ let to_string : type a b. (a, b) t -> string =
   in
   List.map data ~f:M.Elt.to_string |> String.concat ~sep:"\n"
 
-let packed_copy (P t) = P (copy t)
+let packed_copy ?filter (P t) = P (copy ?filter t)
 let packed_length (P t) = length t
 let packed_elt_name (P t) = elt_name t
 let packed_to_string (P t) = to_string t
