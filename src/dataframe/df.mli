@@ -10,6 +10,7 @@ val get_column_exn : t -> string -> Column.packed
 val column_names : t -> string list
 val named_columns : t -> (string * Column.packed) list
 val to_string : ?headers_only:bool -> t -> string
+val to_aligned_rows : t -> string list
 
 (** [length t] returns the number of rows in t. *)
 val length : t -> int

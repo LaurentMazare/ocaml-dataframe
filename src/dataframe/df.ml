@@ -74,3 +74,30 @@ let to_string ?(headers_only = false) t =
 let length t = t.length
 let num_rows = length
 let num_cols t = Map.length t.columns
+
+let to_aligned_rows t =
+  let named_columns = named_columns t |> Array.of_list in
+  let max_len_per_column =
+    Array.map named_columns ~f:(fun (name, _) -> String.length name)
+  in
+  let escape =
+    String.Escaping.escape_gen_exn
+      ~escapeworthy_map:[ '\n', 'n'; '\t', 't' ]
+      ~escape_char:'\\'
+    |> Staged.unstage
+  in
+  let rows =
+    List.init (num_rows t) ~f:(fun j ->
+        Array.mapi named_columns ~f:(fun i (_, column) ->
+            let str = Column.packed_get_string column j |> escape in
+            max_len_per_column.(i) <- max max_len_per_column.(i) (String.length str);
+            str))
+  in
+  let header = Array.map named_columns ~f:fst in
+  let delim = Array.map max_len_per_column ~f:(fun l -> String.make (l + 1) '-') in
+  List.map (header :: delim :: rows) ~f:(fun row ->
+      Array.mapi row ~f:(fun i cell ->
+          let col_len = 2 + max_len_per_column.(i) in
+          let pad = col_len - String.length cell in
+          String.make pad ' ' ^ cell)
+      |> String.concat_array)

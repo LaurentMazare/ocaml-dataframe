@@ -50,6 +50,11 @@ let elt_name : type a b. (a, b) t -> string =
   let (module M) = t.mod_ in
   M.Elt.name
 
+let get_string : type a b. (a, b) t -> int -> string =
+ fun t i ->
+  let (module M) = t.mod_ in
+  M.get t.data i |> M.Elt.to_string
+
 let to_string : type a b. (a, b) t -> string =
  fun t ->
   let (module M) = t.mod_ in
@@ -66,3 +71,4 @@ let to_string : type a b. (a, b) t -> string =
 let packed_length (P t) = length t
 let packed_elt_name (P t) = elt_name t
 let packed_to_string (P t) = to_string t
+let packed_get_string (P t) i = get_string t i
