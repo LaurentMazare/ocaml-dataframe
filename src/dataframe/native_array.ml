@@ -8,6 +8,7 @@ module Make (E : Array_intf.Elt) :
 
   let create v ~len = Array.create v ~len
   let of_array = Fn.id
+  let copy = Array.copy
   let length = Array.length
   let get = Array.get
   let set = Array.set
@@ -33,6 +34,7 @@ module MakeOption (E : Array_intf.Elt) :
 
   let create v ~len = Option_array.init len ~f:(Fn.const v)
   let of_array vs = Option_array.init (Array.length vs) ~f:(fun i -> vs.(i))
+  let copy = Option_array.copy
   let length = Option_array.length
   let get = Option_array.get
   let set = Option_array.set

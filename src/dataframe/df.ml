@@ -5,10 +5,12 @@ module Bool_array : sig
   type t
 
   val create : len:int -> bool -> t
+  val copy : t -> t
 end = struct
   type t = bool array
 
   let create = Array.create
+  let copy = Array.copy
 end
 
 type t =
@@ -101,3 +103,10 @@ let to_aligned_rows t =
           let pad = col_len - String.length cell in
           String.make pad ' ' ^ cell)
       |> String.concat_array)
+
+let copy t =
+  (* TODO: only copy the filtered rows. *)
+  { columns = Map.map t.columns ~f:Column.packed_copy
+  ; filter = Bool_array.copy t.filter
+  ; length = t.length
+  }
