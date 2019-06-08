@@ -1,10 +1,13 @@
 open Base
 
-module Make (E : Array_intf.Elt) : Array_intf.S with type Elt.t = E.t = struct
+module Make (E : Array_intf.Elt) :
+  Array_intf.S with type Elt.t = E.t and type t = E.t array = struct
   type t = E.t array
 
   module Elt = E
 
+  let create v ~len = Array.create v ~len
+  let of_array = Fn.id
   let length = Array.length
   let get = Array.get
   let set = Array.set
@@ -13,8 +16,8 @@ module Make (E : Array_intf.Elt) : Array_intf.S with type Elt.t = E.t = struct
     Type_equal.Id.create ~name:(E.name ^ " native-array") (fun _ -> Sexp.Atom "opaque")
 end
 
-module MakeOption (E : Array_intf.Elt) : Array_intf.S with type Elt.t = E.t option =
-struct
+module MakeOption (E : Array_intf.Elt) :
+  Array_intf.S with type Elt.t = E.t option and type t = E.t Option_array.t = struct
   type t = E.t Option_array.t
 
   module Elt = struct
@@ -28,6 +31,8 @@ struct
       | str -> Option.map (E.of_string str) ~f:Option.some
   end
 
+  let create v ~len = Option_array.init len ~f:(Fn.const v)
+  let of_array vs = Option_array.init (Array.length vs) ~f:(fun i -> vs.(i))
   let length = Option_array.length
   let get = Option_array.get
   let set = Option_array.set
@@ -65,3 +70,11 @@ module String = Make (struct
   let to_string = Fn.id
   let of_string s = Some s
 end)
+
+let int = (module Int : Array_intf.S with type Elt.t = int and type t = int array)
+
+let float =
+  (module Float : Array_intf.S with type Elt.t = float and type t = float array)
+
+let string =
+  (module String : Array_intf.S with type Elt.t = string and type t = string array)

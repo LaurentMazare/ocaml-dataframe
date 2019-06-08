@@ -14,6 +14,7 @@ end
 type t =
   { columns : (string, Column.packed, String.comparator_witness) Map.t
   ; filter : Bool_array.t
+  ; length : int
   }
 
 let create named_columns =
@@ -41,7 +42,7 @@ let create named_columns =
       match Map.of_alist (module String) named_columns with
       | `Ok columns ->
         let filter = Bool_array.create ~len:first_column_length true in
-        Ok { columns; filter }
+        Ok { columns; filter; length = first_column_length }
       | `Duplicate_key column_name ->
         Or_error.errorf "duplicate column name %s" column_name)
 
@@ -52,12 +53,24 @@ let get_column_exn t column_name = Option.value_exn (get_column t column_name)
 let column_names t = Map.keys t.columns
 let named_columns t = Map.to_alist t.columns
 
-let to_string ?(header_only = false) t =
+let to_string ?(headers_only = false) t =
   let named_columns = named_columns t in
   let header =
     List.map named_columns ~f:(fun (name, column) ->
         name ^ ": " ^ Column.packed_elt_name column)
     |> String.concat ~sep:"\n"
   in
-  let header = header ^ "\n---\n" in
-  if header_only then header else failwith "TODO"
+  if headers_only
+  then header
+  else (
+    let values =
+      List.map named_columns ~f:(fun (name, column) ->
+          (* TODO: handle filters. *)
+          name ^ ":\n[\n" ^ Column.packed_to_string column ^ "]")
+      |> String.concat ~sep:"\n"
+    in
+    header ^ "\n---\n" ^ values)
+
+let length t = t.length
+let num_rows = length
+let num_cols t = Map.length t.columns

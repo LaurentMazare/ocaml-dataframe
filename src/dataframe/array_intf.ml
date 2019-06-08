@@ -19,6 +19,8 @@ module type S = sig
 
   module Elt : Elt
 
+  val create : Elt.t -> len:int -> t
+  val of_array : Elt.t array -> t
   val length : t -> int
   val get : t -> int -> Elt.t
   val set : t -> int -> Elt.t -> unit
