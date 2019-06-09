@@ -20,6 +20,7 @@ let create b ~len:length =
     { data; length; num_set })
 
 let copy t = { data = Bytes.copy t.data; length = t.length; num_set = t.num_set }
+let length t = t.length
 
 let get t i =
   if i < 0

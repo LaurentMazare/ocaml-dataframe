@@ -34,3 +34,17 @@ module Filter : sig
 end
 
 val filter : t -> 'a Filter.t -> 'a -> t
+
+module App : sig
+  type df
+  type 'a t
+
+  val return : 'a -> 'a t
+  val apply : ('a -> 'b) t -> 'a t -> 'b t
+
+  val filter : bool t -> df -> df
+
+  val int : string -> int t
+  val float : string -> float t
+end
+with type df := t

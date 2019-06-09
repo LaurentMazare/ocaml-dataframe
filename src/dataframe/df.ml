@@ -75,7 +75,7 @@ let to_aligned_rows t =
     |> Staged.unstage
   in
   let rows =
-    List.init (num_rows t) ~f:(fun j ->
+    List.init (Bool_array.length t.filter) ~f:(fun j ->
         if Bool_array.get t.filter j
         then
           Array.mapi named_columns ~f:(fun i (_, column) ->
@@ -139,3 +139,26 @@ let filter t filter_ fn =
           loop filter_ fn))
   in
   { columns = t.columns; filter }
+
+module App = struct
+  type nonrec 'a t = t -> index:int -> 'a
+
+  let return a _df ~index:_ = a
+
+  let apply t1 t2 df ~index =
+    let t1 = t1 df ~index in
+    let t2 = t2 df ~index in
+    t1 t2
+
+  let filter (t : bool t) df =
+    let filter = Bool_array.mapi df.filter ~f:(fun index b -> b && t df ~index) in
+    { columns = df.columns; filter }
+
+  let int name df ~index =
+    let column = Column.extract_exn (get_column_exn df name) Native_array.int in
+    Column.get column index
+
+  let float name df ~index =
+    let column = Column.extract_exn (get_column_exn df name) Native_array.float in
+    Column.get column index
+end
