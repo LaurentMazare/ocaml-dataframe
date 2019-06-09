@@ -1,6 +1,7 @@
+(* Immutable bool array. *)
 type t
 
-val create : len:int -> bool -> t
+val create : bool -> len:int -> t
 val copy : t -> t
 val get : t -> int -> bool
 val num_set : t -> int
