@@ -18,3 +18,19 @@ val length : t -> int
 
 val num_rows : t -> int
 val num_cols : t -> int
+
+module Filter : sig
+  type _ column
+
+  (* TODO: avoid requiring [t] in the following. *)
+  val int : t -> string -> int column
+  val float : t -> string -> float column
+  val string : t -> string -> string column
+
+  type _ t
+  val apply : 'a column -> 'b t -> ('a -> 'b) t
+  val (@->) : 'a column -> 'b t -> ('a -> 'b) t
+  val return : bool t
+end
+
+val filter : t -> 'a Filter.t -> 'a -> t

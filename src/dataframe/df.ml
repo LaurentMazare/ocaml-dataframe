@@ -97,5 +97,45 @@ let to_aligned_rows t =
 
 let copy t =
   { columns = Map.map t.columns ~f:Column.(packed_copy ~filter:t.filter)
-  ; filter = Bool_array.copy t.filter
+  ; filter = Bool_array.create true ~len:(Bool_array.num_set t.filter)
   }
+
+(* Applicative module for filtering. *)
+module Filter = struct
+  type 'a column = P : ('a, 'b) Column.t -> 'a column
+
+  let column : type a b.
+      t -> string -> (module Array_intf.S with type Elt.t = a and type t = b) -> a column
+    =
+   fun df name mod_ -> P (Column.extract_exn (get_column_exn df name) mod_)
+
+  let get : type a. a column -> int -> a =
+   fun (P column) index -> Column.get column index
+
+  type _ t =
+    | Apply : 'a column * 'b t -> ('a -> 'b) t
+    | Return : bool t
+
+  let return = Return
+  let apply w t = Apply (w, t)
+  let ( @-> ) = apply
+  let int df name = column df name Native_array.int
+  let float df name = column df name Native_array.float
+  let string df name = column df name Native_array.string
+end
+
+let filter t filter_ fn =
+  let filter =
+    Bool_array.mapi t.filter ~f:(fun index bool ->
+        if not bool
+        then false
+        else (
+          let rec loop : type a. a Filter.t -> a -> bool =
+           fun t fn ->
+            match t with
+            | Return -> fn
+            | Apply (w, t) -> loop t (fn (Filter.get w index))
+          in
+          loop filter_ fn))
+  in
+  { columns = t.columns; filter }

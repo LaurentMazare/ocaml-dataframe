@@ -6,6 +6,11 @@ val extract
   -> (module Array_intf.S with type Elt.t = 'a and type t = 'b)
   -> ('a, 'b) t option
 
+val extract_exn
+  :  packed
+  -> (module Array_intf.S with type Elt.t = 'a and type t = 'b)
+  -> ('a, 'b) t
+
 val create
   :  (module Array_intf.S with type Elt.t = 'a and type t = 'b)
   -> 'a

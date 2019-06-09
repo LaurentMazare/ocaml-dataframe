@@ -45,6 +45,11 @@ let extract : type a b.
   | Some T -> Some t
   | None -> None
 
+let extract_exn : type a b.
+    packed -> (module Array_intf.S with type Elt.t = a and type t = b) -> (a, b) t
+  =
+ fun t m -> Option.value_exn (extract t m)
+
 let length : type a b. (a, b) t -> int =
  fun t ->
   let (module M) = t.mod_ in

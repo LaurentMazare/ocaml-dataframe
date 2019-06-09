@@ -32,3 +32,23 @@ let get t i =
     byte land (1 lsl index_in_byte) <> 0)
 
 let num_set t = t.num_set
+
+let mapi t ~f =
+  let bytes_length = Bytes.length t.data in
+  let num_set = ref 0 in
+  let data = Bytes.make bytes_length (Char.of_int_exn 0) in
+  for byte_index = 0 to bytes_length - 1 do
+    let byte = Bytes.unsafe_get t.data byte_index |> Char.to_int in
+    let bit_offset = 8 * byte_index in
+    let bits_used = if byte_index <> bytes_length - 1 then 8 else t.length lsr 3 in
+    let v = ref 0 in
+    for i = 0 to bits_used - 1 do
+      let bit_set = 1 lsl i in
+      if f (bit_offset + i) (byte land bit_set <> 0)
+      then (
+        v := !v lor bit_set;
+        Int.incr num_set)
+    done;
+    if !v <> 0 then Bytes.unsafe_set data byte_index (Char.of_int_exn !v)
+  done;
+  { data; length = t.length; num_set = !num_set }
