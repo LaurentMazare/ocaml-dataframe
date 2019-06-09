@@ -3,7 +3,6 @@ open Base
 type t =
   { columns : (string, Column.packed, String.comparator_witness) Map.t
   ; filter : Bool_array.t
-  ; length : int
   }
 
 let create named_columns =
@@ -31,7 +30,7 @@ let create named_columns =
       match Map.of_alist (module String) named_columns with
       | `Ok columns ->
         let filter = Bool_array.create ~len:first_column_length true in
-        Ok { columns; filter; length = first_column_length }
+        Ok { columns; filter }
       | `Duplicate_key column_name ->
         Or_error.errorf "duplicate column name %s" column_name)
 
@@ -60,7 +59,7 @@ let to_string ?(headers_only = false) t =
     in
     header ^ "\n---\n" ^ values)
 
-let length t = t.length
+let length t = Bool_array.num_set t.filter
 let num_rows = length
 let num_cols t = Map.length t.columns
 
@@ -99,5 +98,4 @@ let to_aligned_rows t =
 let copy t =
   { columns = Map.map t.columns ~f:Column.(packed_copy ~filter:t.filter)
   ; filter = Bool_array.copy t.filter
-  ; length = t.length
   }
