@@ -100,65 +100,43 @@ let copy t =
   ; filter = Bool_array.create true ~len:(Bool_array.num_set t.filter)
   }
 
-(* Applicative module for filtering. *)
-module Filter = struct
-  type 'a column = P : ('a, 'b) Column.t -> 'a column
+(* Applicative module for filtering, mapping, etc. *)
+module Applicative = struct
+  module A = Applicative.Make (struct
+    type nonrec 'a t = t -> index:int -> 'a
 
-  let column : type a b.
-      t -> string -> (module Array_intf.S with type Elt.t = a and type t = b) -> a column
-    =
-   fun df name mod_ -> P (Column.extract_exn (get_column_exn df name) mod_)
+    let return a _df ~index:_ = a
 
-  let get : type a. a column -> int -> a =
-   fun (P column) index -> Column.get column index
+    let apply t1 t2 df ~index =
+      let t1 = t1 df ~index in
+      let t2 = t2 df ~index in
+      t1 t2
 
-  type _ t =
-    | Apply : 'a column * 'b t -> ('a -> 'b) t
-    | Return : bool t
+    let map = `Define_using_apply
+  end)
 
-  let return = Return
-  let apply w t = Apply (w, t)
-  let ( @-> ) = apply
-  let int df name = column df name Native_array.int
-  let float df name = column df name Native_array.float
-  let string df name = column df name Native_array.string
+  module App = struct
+    type nonrec 'a t = t -> index:int -> 'a
+
+    include A
+  end
+
+  module Open_on_rhs_intf = struct
+    module type S = Applicative.S
+  end
+
+  include App
+  include Applicative.Make_let_syntax (App) (Open_on_rhs_intf) (App)
+
+  let column mod_ name df ~index =
+    let column = Column.extract_exn (get_column_exn df name) mod_ in
+    Column.get column index
+
+  let int = column Native_array.int
+  let float = column Native_array.float
+  let string = column Native_array.string
 end
 
-let filter t filter_ fn =
-  let filter =
-    Bool_array.mapi t.filter ~f:(fun index bool ->
-        if not bool
-        then false
-        else (
-          let rec loop : type a. a Filter.t -> a -> bool =
-           fun t fn ->
-            match t with
-            | Return -> fn
-            | Apply (w, t) -> loop t (fn (Filter.get w index))
-          in
-          loop filter_ fn))
-  in
+let filter t (f : bool Applicative.t) =
+  let filter = Bool_array.mapi t.filter ~f:(fun index b -> b && f t ~index) in
   { columns = t.columns; filter }
-
-module App = struct
-  type nonrec 'a t = t -> index:int -> 'a
-
-  let return a _df ~index:_ = a
-
-  let apply t1 t2 df ~index =
-    let t1 = t1 df ~index in
-    let t2 = t2 df ~index in
-    t1 t2
-
-  let filter (t : bool t) df =
-    let filter = Bool_array.mapi df.filter ~f:(fun index b -> b && t df ~index) in
-    { columns = df.columns; filter }
-
-  let int name df ~index =
-    let column = Column.extract_exn (get_column_exn df name) Native_array.int in
-    Column.get column index
-
-  let float name df ~index =
-    let column = Column.extract_exn (get_column_exn df name) Native_array.float in
-    Column.get column index
-end

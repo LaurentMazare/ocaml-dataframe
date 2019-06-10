@@ -19,32 +19,18 @@ val length : t -> int
 val num_rows : t -> int
 val num_cols : t -> int
 
-module Filter : sig
-  type _ column
+module Applicative : sig
+  type nonrec 'a t = t -> index:int -> 'a
+  module Open_on_rhs_intf : sig
+    module type S = Applicative.S
+  end
+  include Applicative.S with type 'a t := 'a t
+  include Applicative.Let_syntax with type 'a t := 'a t and module Open_on_rhs_intf := Open_on_rhs_intf
 
-  (* TODO: avoid requiring [t] in the following. *)
-  val int : t -> string -> int column
-  val float : t -> string -> float column
-  val string : t -> string -> string column
-
-  type _ t
-  val apply : 'a column -> 'b t -> ('a -> 'b) t
-  val (@->) : 'a column -> 'b t -> ('a -> 'b) t
-  val return : bool t
-end
-
-val filter : t -> 'a Filter.t -> 'a -> t
-
-module App : sig
-  type df
-  type 'a t
-
-  val return : 'a -> 'a t
-  val apply : ('a -> 'b) t -> 'a t -> 'b t
-
-  val filter : bool t -> df -> df
-
+  val column : (module Array_intf.S with type t = 'a and type Elt.t = 'b) -> string -> 'b t
   val int : string -> int t
   val float : string -> float t
+  val string : string -> string t
 end
-with type df := t
+
+val filter : t -> bool Applicative.t -> t
