@@ -107,21 +107,23 @@ let copy t =
 
 (* Applicative module for filtering, mapping, etc. *)
 module Row_map = struct
+  type nonrec 'a t_ = t -> (index:int -> 'a) Staged.t
+
   module A = Applicative.Make (struct
-    type nonrec 'a t = t -> index:int -> 'a
+    type 'a t = 'a t_
 
-    let return a _df ~index:_ = a
+    let return a _df = Staged.stage (fun ~index:_ -> a)
 
-    let apply t1 t2 df ~index =
-      let t1 = t1 df ~index in
-      let t2 = t2 df ~index in
-      t1 t2
+    let apply t1 t2 df =
+      let t1 = Staged.unstage (t1 df) in
+      let t2 = Staged.unstage (t2 df) in
+      Staged.stage (fun ~index -> (t1 ~index) (t2 ~index))
 
     let map = `Define_using_apply
   end)
 
   module App = struct
-    type nonrec 'a t = t -> index:int -> 'a
+    type 'a t = 'a t_
 
     include A
   end
@@ -133,9 +135,9 @@ module Row_map = struct
   include App
   include Applicative.Make_let_syntax (App) (Open_on_rhs_intf) (App)
 
-  let column mod_ name df ~index =
+  let column mod_ name df =
     let column = Column.extract_exn (get_column_exn df name) mod_ in
-    Column.get column index
+    Staged.stage (fun ~index -> Column.get column index)
 
   let int = column Native_array.int
   let float = column Native_array.float
@@ -143,5 +145,6 @@ module Row_map = struct
 end
 
 let filter t (f : bool Row_map.t) =
-  let filter = Bool_array.mapi t.filter ~f:(fun index b -> b && f t ~index) in
+  let f = Staged.unstage (f t) in
+  let filter = Bool_array.mapi t.filter ~f:(fun index b -> b && f ~index) in
   { columns = t.columns; filter }

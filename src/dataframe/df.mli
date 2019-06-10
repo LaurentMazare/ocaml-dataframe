@@ -25,7 +25,7 @@ module Csv : sig
 end
 
 module Row_map : sig
-  type nonrec 'a t = t -> index:int -> 'a
+  type nonrec 'a t
   include Applicative.S with type 'a t := 'a t
   include Applicative.Let_syntax with type 'a t := 'a t
 
