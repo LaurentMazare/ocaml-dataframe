@@ -149,8 +149,8 @@ let filter t (f : bool Row_map.t) =
   let filter = Bool_array.mapi t.filter ~f:(fun index b -> b && f ~index) in
   { columns = t.columns; filter }
 
-let map : type a b. t -> (a, b) Array_intf.t -> f:a Row_map.t -> (a, b) Column.t =
- fun t mod_ ~f ->
+let map : type a b. t -> (a, b) Array_intf.t -> a Row_map.t -> (a, b) Column.t =
+ fun t mod_ f ->
   let (module M) = mod_ in
   if length t = 0
   then Column.of_array mod_ [||]

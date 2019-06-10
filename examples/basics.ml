@@ -15,7 +15,18 @@ let () =
     Df.filter
       df
       [%map_open
-        let pi = Df.Row_map.int "pi" in
+        let pi = Df.Row_map.int col_pi in
         pi = 1]
   in
-  List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline
+  List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
+  let sum_df =
+    Df.map
+      df
+      Native_array.float
+      [%map_open
+        let pi = Df.Row_map.int col_pi
+        and e = Df.Row_map.float col_e2 in
+        Float.of_int pi +. e]
+  in
+  Stdio.printf "> %d\n%!" (Df.length df);
+  Stdio.print_endline (Column.to_string sum_df)

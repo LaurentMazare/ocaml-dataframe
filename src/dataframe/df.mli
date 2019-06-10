@@ -48,11 +48,11 @@ end
 *)
 val filter : t -> bool Row_map.t -> t
 
-(** [map t array_intf ~f] returns a column by applying [f] to rows in
+(** [map t array_intf f] returns a column by applying [f] to rows in
     [t]. This creates a newly allocated column only containing the
     filtered elements from the initial dataframe.
 *)
-val map : t -> ('a, 'b) Array_intf.t -> f:'a Row_map.t ->  ('a, 'b) Column.t
+val map : t -> ('a, 'b) Array_intf.t -> 'a Row_map.t ->  ('a, 'b) Column.t
 
 (** [map_and_column ?only_filtered t ~name f] returns a dataframe similar
     to [t] but also adding a column [name] which values are obtained by

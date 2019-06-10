@@ -73,7 +73,7 @@ let to_string : type a b. ?max_rows:int -> ?filter:Bool_array.t -> (a, b) t -> s
           length
           ());
   let rec loop n ~index acc =
-    if n = 0 || index = length - 1
+    if n = 0 || index = length
     then List.rev acc
     else (
       let filter_ok =
