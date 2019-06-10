@@ -26,11 +26,8 @@ end
 
 module Row_map : sig
   type nonrec 'a t = t -> index:int -> 'a
-  module Open_on_rhs_intf : sig
-    module type S = Applicative.S
-  end
   include Applicative.S with type 'a t := 'a t
-  include Applicative.Let_syntax with type 'a t := 'a t and module Open_on_rhs_intf := Open_on_rhs_intf
+  include Applicative.Let_syntax with type 'a t := 'a t
 
   val column : (module Array_intf.S with type t = 'a and type Elt.t = 'b) -> string -> 'b t
   val int : string -> int t

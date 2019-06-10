@@ -93,7 +93,7 @@ let to_aligned_rows t =
   in
   let header = Array.map named_columns ~f:fst in
   let delim = Array.map max_len_per_column ~f:(fun l -> String.make (l + 1) '-') in
-  List.map (header :: delim :: rows) ~f:(fun row ->
+  List.map (delim :: header :: delim :: rows) ~f:(fun row ->
       Array.mapi row ~f:(fun i cell ->
           let col_len = 2 + max_len_per_column.(i) in
           let pad = col_len - String.length cell in
