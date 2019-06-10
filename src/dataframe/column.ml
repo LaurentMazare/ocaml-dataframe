@@ -82,7 +82,11 @@ let to_string : type a b. ?max_rows:int -> ?filter:Bool_array.t -> (a, b) t -> s
       in
       let rem, acc =
         if filter_ok
-        then n - 1, (M.get t.data index |> M.Elt.to_string) :: acc
+        then (
+          let str =
+            Printf.sprintf "%d %s" index (M.get t.data index |> M.Elt.to_string)
+          in
+          n - 1, str :: acc)
         else n, acc
       in
       loop rem acc ~index:(index + 1))
