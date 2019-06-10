@@ -1,3 +1,5 @@
 (executables
   (names basics)
-  (libraries base dataframe stdio))
+  (libraries base dataframe stdio)
+  (preprocess (pps ppx_let))
+  )
