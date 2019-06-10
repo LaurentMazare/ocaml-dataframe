@@ -1,25 +1,24 @@
 open! Base
 
 type ('a, 'b) t =
-  { mod_ : (module Array_intf.S with type Elt.t = 'a and type t = 'b)
+  { mod_ : ('a, 'b) Array_intf.t
   ; data : 'b
   }
 
 type packed = P : _ t -> packed
 
-let create : type a b.
-    (module Array_intf.S with type Elt.t = a and type t = b) -> a -> len:int -> (a, b) t
-  =
+let of_data : type a b. (a, b) Array_intf.t -> b -> (a, b) t =
+ fun mod_ data -> { mod_; data }
+
+let create : type a b. (a, b) Array_intf.t -> a -> len:int -> (a, b) t =
  fun mod_ v ~len ->
   let (module M) = mod_ in
-  { mod_; data = M.create v ~len }
+  of_data mod_ (M.create v ~len)
 
-let of_array : type a b.
-    (module Array_intf.S with type Elt.t = a and type t = b) -> a array -> (a, b) t
-  =
+let of_array : type a b. (a, b) Array_intf.t -> a array -> (a, b) t =
  fun mod_ vs ->
   let (module M) = mod_ in
-  { mod_; data = M.of_array vs }
+  of_data mod_ (M.of_array vs)
 
 let copy : type a b. ?filter:Bool_array.t -> (a, b) t -> (a, b) t =
  fun ?filter t ->
@@ -36,18 +35,14 @@ let set : type a b. (a, b) t -> int -> a -> unit =
   let (module M) = t.mod_ in
   M.set t.data i v
 
-let extract : type a b.
-    packed -> (module Array_intf.S with type Elt.t = a and type t = b) -> (a, b) t option
-  =
+let extract : type a b. packed -> (a, b) Array_intf.t -> (a, b) t option =
  fun (P t) (module M) ->
   let (module M') = t.mod_ in
   match Type_equal.Id.same_witness M.type_id M'.type_id with
   | Some T -> Some t
   | None -> None
 
-let extract_exn : type a b.
-    packed -> (module Array_intf.S with type Elt.t = a and type t = b) -> (a, b) t
-  =
+let extract_exn : type a b. packed -> (a, b) Array_intf.t -> (a, b) t =
  fun t m -> Option.value_exn (extract t m)
 
 let length : type a b. (a, b) t -> int =

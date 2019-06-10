@@ -1,27 +1,11 @@
 type ('a, 'b) t
 type packed = P : _ t -> packed
 
-val extract
-  :  packed
-  -> (module Array_intf.S with type Elt.t = 'a and type t = 'b)
-  -> ('a, 'b) t option
-
-val extract_exn
-  :  packed
-  -> (module Array_intf.S with type Elt.t = 'a and type t = 'b)
-  -> ('a, 'b) t
-
-val create
-  :  (module Array_intf.S with type Elt.t = 'a and type t = 'b)
-  -> 'a
-  -> len:int
-  -> ('a, 'b) t
-
-val of_array
-  :  (module Array_intf.S with type Elt.t = 'a and type t = 'b)
-  -> 'a array
-  -> ('a, 'b) t
-
+val extract : packed -> ('a, 'b) Array_intf.t -> ('a, 'b) t option
+val extract_exn : packed -> ('a, 'b) Array_intf.t -> ('a, 'b) t
+val create : ('a, 'b) Array_intf.t -> 'a -> len:int -> ('a, 'b) t
+val of_data : ('a, 'b) Array_intf.t -> 'b -> ('a, 'b) t
+val of_array : ('a, 'b) Array_intf.t -> 'a array -> ('a, 'b) t
 val copy : ?filter:Bool_array.t -> ('a, 'b) t -> ('a, 'b) t
 val get : ('a, _) t -> int -> 'a
 val set : ('a, _) t -> int -> 'a -> unit

@@ -1,10 +1,17 @@
+(* TODO: maybe add a phantom type to describe whether a dataframe is
+   filtered or not.
+*)
 open Base
 
 type t
 
 val create : (string * Column.packed) list -> t Or_error.t
 val create_exn : (string * Column.packed) list -> t
-val sort : _ -> [ `not_implemented_yet ]
+
+(** [copy t] returns a new dataframe where all the columns from [t]
+    have been copied. Note that this is not a deep-copy: column elements
+    are shared which may have some consequences if they are mutable.
+*)
 val copy : t -> t
 val get_column : t -> string -> Column.packed option
 val get_column_exn : t -> string -> Column.packed
@@ -18,6 +25,7 @@ val length : t -> int
 
 val num_rows : t -> int
 val num_cols : t -> int
+val sort : _ -> [ `not_implemented_yet ]
 
 module Csv : sig
   val read : string -> [ `not_implemented_yet ]
@@ -35,4 +43,20 @@ module Row_map : sig
   val string : string -> string t
 end
 
+(** [filter t f] applies a filter to dataframe [t] and returns
+    a new dataframe that share column data with [t].
+*)
 val filter : t -> bool Row_map.t -> t
+
+(** [map t array_intf ~f] returns a column by applying [f] to rows in
+    [t]. This creates a newly allocated column only containing the
+    filtered elements from the initial dataframe.
+*)
+val map : t -> ('a, 'b) Array_intf.t -> f:'a Row_map.t ->  ('a, 'b) Column.t
+
+(** [map_and_column ?only_filtered t ~name f] returns a dataframe similar
+    to [t] but also adding a column [name] which values are obtained by
+    applying [f] to each row in [t].
+*)
+val map_and_add_column
+ : ?only_filtered:bool -> t -> name:string -> 'a Row_map.t -> ('a, 'b) Array_intf.t -> t

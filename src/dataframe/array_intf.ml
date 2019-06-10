@@ -27,3 +27,5 @@ module type S = sig
   val set : t -> int -> Elt.t -> unit
   val type_id : (t * Elt.t) Type_equal.Id.t
 end
+
+type ('a, 'b) t = (module S with type Elt.t = 'a and type t = 'b)

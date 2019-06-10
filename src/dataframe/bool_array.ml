@@ -34,6 +34,18 @@ let get t i =
 
 let num_set t = t.num_set
 
+let iteri t ~f =
+  let bytes_length = Bytes.length t.data in
+  for byte_index = 0 to bytes_length - 1 do
+    let byte = Bytes.unsafe_get t.data byte_index |> Char.to_int in
+    let bit_offset = 8 * byte_index in
+    let bits_used = if byte_index <> bytes_length - 1 then 8 else t.length lsr 3 in
+    for i = 0 to bits_used - 1 do
+      let bit_set = 1 lsl i in
+      f (bit_offset + i) (byte land bit_set <> 0)
+    done
+  done
+
 let mapi t ~f =
   let bytes_length = Bytes.length t.data in
   let num_set = ref 0 in

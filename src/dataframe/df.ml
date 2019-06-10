@@ -148,3 +148,36 @@ let filter t (f : bool Row_map.t) =
   let f = Staged.unstage (f t) in
   let filter = Bool_array.mapi t.filter ~f:(fun index b -> b && f ~index) in
   { columns = t.columns; filter }
+
+let map : type a b. t -> (a, b) Array_intf.t -> f:a Row_map.t -> (a, b) Column.t =
+ fun t mod_ ~f ->
+  let (module M) = mod_ in
+  if length t = 0
+  then Column.of_array mod_ [||]
+  else (
+    let f = Staged.unstage (f t) in
+    let new_index = ref 0 in
+    (* Lazy creation of the array as we need to know the first value
+       to be able to create this. *)
+    let data = ref None in
+    Bool_array.iteri t.filter ~f:(fun index b ->
+        if b
+        then (
+          let v = f ~index in
+          let data =
+            match !data with
+            | None ->
+              let d = M.create v ~len:(length t) in
+              data := Some d;
+              d
+            | Some data -> data
+          in
+          M.set data !new_index v;
+          Int.incr new_index));
+    match !data with
+    | None -> Column.of_array mod_ [||]
+    | Some data -> Column.of_data mod_ data)
+
+let map_and_add_column ?(only_filtered = false) _t =
+  ignore only_filtered;
+  failwith "not implemented yet"
