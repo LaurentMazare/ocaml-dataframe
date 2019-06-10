@@ -4,7 +4,7 @@ type t
 
 val create : (string * Column.packed) list -> t Or_error.t
 val create_exn : (string * Column.packed) list -> t
-val read_csv : string -> t
+val sort : _ -> [ `not_implemented_yet ]
 val copy : t -> t
 val get_column : t -> string -> Column.packed option
 val get_column_exn : t -> string -> Column.packed
@@ -19,7 +19,12 @@ val length : t -> int
 val num_rows : t -> int
 val num_cols : t -> int
 
-module Applicative : sig
+module Csv : sig
+  val read : string -> [ `not_implemented_yet ]
+  val write : t -> string -> [ `not_implemented_yet ]
+end
+
+module Row_map : sig
   type nonrec 'a t = t -> index:int -> 'a
   module Open_on_rhs_intf : sig
     module type S = Applicative.S
@@ -33,4 +38,4 @@ module Applicative : sig
   val string : string -> string t
 end
 
-val filter : t -> bool Applicative.t -> t
+val filter : t -> bool Row_map.t -> t

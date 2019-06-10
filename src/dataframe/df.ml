@@ -35,7 +35,13 @@ let create named_columns =
         Or_error.errorf "duplicate column name %s" column_name)
 
 let create_exn columns = create columns |> Or_error.ok_exn
-let read_csv _filename = failwith "TODO"
+
+module Csv = struct
+  let read _filename = `not_implemented_yet
+  let write _t _filename = `not_implemented_yet
+end
+
+let sort _t = `not_implemented_yet
 let get_column t column_name = Map.find t.columns column_name
 let get_column_exn t column_name = Option.value_exn (get_column t column_name)
 let column_names t = Map.keys t.columns
@@ -53,8 +59,7 @@ let to_string ?(headers_only = false) t =
   else (
     let values =
       List.map named_columns ~f:(fun (name, column) ->
-          (* TODO: handle filters. *)
-          name ^ ":\n[\n" ^ Column.packed_to_string column ^ "]")
+          name ^ ":\n[\n" ^ Column.packed_to_string ~filter:t.filter column ^ "]")
       |> String.concat ~sep:"\n"
     in
     header ^ "\n---\n" ^ values)
@@ -101,7 +106,7 @@ let copy t =
   }
 
 (* Applicative module for filtering, mapping, etc. *)
-module Applicative = struct
+module Row_map = struct
   module A = Applicative.Make (struct
     type nonrec 'a t = t -> index:int -> 'a
 
@@ -137,6 +142,6 @@ module Applicative = struct
   let string = column Native_array.string
 end
 
-let filter t (f : bool Applicative.t) =
+let filter t (f : bool Row_map.t) =
   let filter = Bool_array.mapi t.filter ~f:(fun index b -> b && f t ~index) in
   { columns = t.columns; filter }

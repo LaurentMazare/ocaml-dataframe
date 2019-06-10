@@ -1,6 +1,6 @@
 open! Base
 open! Dataframe
-open Df.Applicative.Let_syntax
+open Df.Row_map.Let_syntax
 
 let () =
   let pi = Column.of_array Native_array.int [| 3; 1; 4; 1; 5; 9; 2; 6; 5 |] in
@@ -11,7 +11,7 @@ let () =
     Df.filter
       df
       [%map_open
-        let pi = Df.Applicative.int "pi" in
+        let pi = Df.Row_map.int "pi" in
         pi = 1]
   in
   List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline

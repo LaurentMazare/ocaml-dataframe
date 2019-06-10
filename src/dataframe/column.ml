@@ -65,21 +65,38 @@ let get_string : type a b. (a, b) t -> int -> string =
   let (module M) = t.mod_ in
   M.get t.data i |> M.Elt.to_string
 
-let to_string : type a b. (a, b) t -> string =
- fun t ->
+let to_string : type a b. ?max_rows:int -> ?filter:Bool_array.t -> (a, b) t -> string =
+ fun ?(max_rows = 10) ?filter t ->
   let (module M) = t.mod_ in
   let length = M.length t.data in
-  let data =
-    if length < 10
-    then List.init length ~f:(M.get t.data)
-    else
-      List.init 5 ~f:(M.get t.data)
-      @ List.init 5 ~f:(fun i -> M.get t.data (length - 5 + i))
+  Option.iter filter ~f:(fun filter ->
+      if Bool_array.length filter <> length
+      then
+        Printf.failwithf
+          "incoherent filter size %d <> %d"
+          (Bool_array.length filter)
+          length
+          ());
+  let rec loop n ~index acc =
+    if n = 0 || index = length - 1
+    then List.rev acc
+    else (
+      let filter_ok =
+        Option.value_map filter ~default:true ~f:(fun filter ->
+            Bool_array.get filter index)
+      in
+      let rem, acc =
+        if filter_ok
+        then n - 1, (M.get t.data index |> M.Elt.to_string) :: acc
+        else n, acc
+      in
+      loop rem acc ~index:(index + 1))
   in
-  List.map data ~f:M.Elt.to_string |> String.concat ~sep:"\n"
+  let data = loop max_rows ~index:0 [] in
+  String.concat data ~sep:"\n"
 
 let packed_copy ?filter (P t) = P (copy ?filter t)
 let packed_length (P t) = length t
 let packed_elt_name (P t) = elt_name t
-let packed_to_string (P t) = to_string t
+let packed_to_string ?max_rows ?filter (P t) = to_string ?max_rows ?filter t
 let packed_get_string (P t) i = get_string t i
