@@ -94,8 +94,20 @@ let to_string : type a b. ?max_rows:int -> ?filter:Bool_array.t -> (a, b) t -> s
   let data = loop max_rows ~index:0 [] in
   String.concat data ~sep:"\n"
 
+let select (type a b) (t : (a, b) t) ~indexes =
+  let (module M) = t.mod_ in
+  let length = Array.length indexes in
+  if length = 0
+  then { mod_ = t.mod_; data = M.of_array [||] }
+  else (
+    let v = M.get t.data indexes.(0) in
+    let data = M.create v ~len:length in
+    Array.iteri indexes ~f:(fun i index -> M.set data i (M.get t.data index));
+    { mod_ = t.mod_; data })
+
 let packed_copy ?filter (P t) = P (copy ?filter t)
 let packed_length (P t) = length t
 let packed_elt_name (P t) = elt_name t
 let packed_to_string ?max_rows ?filter (P t) = to_string ?max_rows ?filter t
 let packed_get_string (P t) i = get_string t i
+let packed_select (P t) ~indexes = P (select t ~indexes)

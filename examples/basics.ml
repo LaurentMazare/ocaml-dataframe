@@ -11,17 +11,17 @@ let () =
   let e = Column.of_array Native_array.float [| 2.; 7.; 1.; 8.; 2.; 8.; 1.; 8.; 2. |] in
   let df = Df.create_exn [ col_e1, P e; col_pi, P pi; col_e2, P e ] in
   List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
-  let df =
+  let filtered_df =
     Df.filter
       df
       [%map_open
         let pi = Df.Row_map.int col_pi in
         pi = 1]
   in
-  List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
+  List.iter (Df.to_aligned_rows filtered_df) ~f:Stdio.print_endline;
   let sum_df =
     Df.map
-      df
+      filtered_df
       Native_array.float
       [%map_open
         let pi = Df.Row_map.int col_pi
@@ -37,4 +37,6 @@ let () =
       Df.Row_map.(map2 (int col_pi) (float col_e2) ~f:(fun pi e -> Float.of_int pi +. e))
   in
   Stdio.printf "> %d\n%!" (Df.length df);
-  Stdio.print_endline (Column.to_string sum_df)
+  Stdio.print_endline (Column.to_string sum_df);
+  let sorted_df = Df.sort df (Df.Row_map.int col_pi) ~compare:Int.compare in
+  List.iter (Df.to_aligned_rows sorted_df) ~f:Stdio.print_endline

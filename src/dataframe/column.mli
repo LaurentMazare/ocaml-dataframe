@@ -13,8 +13,10 @@ val length : _ t -> int
 val elt_name : _ t -> string
 val get_string : _ t -> int -> string
 val to_string : ?max_rows:int -> ?filter:Bool_array.t -> _ t -> string
+val select : ('a, 'b) t -> indexes:int array -> ('a, 'b) t
 val packed_copy : ?filter:Bool_array.t -> packed -> packed
 val packed_length : packed -> int
 val packed_elt_name : packed -> string
 val packed_to_string : ?max_rows:int -> ?filter:Bool_array.t -> packed -> string
 val packed_get_string : packed -> int -> string
+val packed_select : packed -> indexes:int array -> packed

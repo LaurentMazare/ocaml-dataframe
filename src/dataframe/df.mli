@@ -1,7 +1,10 @@
 open Base
 
 (* The phantom type is used to indicate whether a filter applies to the
-   data or not. *)
+   data or not.
+   Functions that return an [`unfiltered] usually make a copy of the whole
+   dataframe.
+*)
 type _ t
 
 val create : (string * Column.packed) list -> [ `unfiltered ] t Or_error.t
@@ -31,7 +34,6 @@ val length : _ t -> int
 
 val num_rows : _ t -> int
 val num_cols : _ t -> int
-val sort : _ -> [ `not_implemented_yet ]
 
 module Csv : sig
   val read : string -> [ `not_implemented_yet ]
@@ -69,3 +71,5 @@ val map_and_add_column
 
 val map_and_add_column_exn
  : [ `unfiltered] t -> name:string -> ('a, 'b) Array_intf.t -> 'a Row_map.t -> [ `unfiltered ] t
+
+val sort : _ t -> 'a Row_map.t -> compare:('a -> 'a -> int) -> [ `unfiltered ] t

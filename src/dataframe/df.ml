@@ -47,7 +47,6 @@ module Csv = struct
   let write _t _filename = `not_implemented_yet
 end
 
-let sort _t = `not_implemented_yet
 let get_column t column_name = Map.find t.columns column_name
 let get_column_exn t column_name = Option.value_exn (get_column t column_name)
 let column_names t = Map.keys t.columns
@@ -228,3 +227,26 @@ let add_column t ~name column =
 let add_column_exn t ~name column = add_column t ~name column |> Or_error.ok_exn
 let map_and_add_column t ~name mod_ f = add_column t ~name (map t mod_ f)
 let map_and_add_column_exn t ~name mod_ f = add_column_exn t ~name (map t mod_ f)
+
+let sort (type a) (t : a t) f ~compare =
+  let indexes =
+    let f = Staged.unstage (f (P t)) in
+    match t.filter with
+    | No_filter len -> Array.init len ~f:(fun index -> f ~index, index)
+    | Filter filter ->
+      let indexes = Array.create None ~len:(Bool_array.num_set filter) in
+      let current_index = ref 0 in
+      Bool_array.iteri filter ~f:(fun index b ->
+          if b
+          then (
+            indexes.(!current_index) <- Some (f ~index, index);
+            Int.incr current_index));
+      Array.map indexes ~f:(fun opt -> Option.value_exn opt)
+  in
+  Array.sort indexes ~compare:(fun (a1, _) (a2, _) -> compare a1 a2);
+  let indexes = Array.map indexes ~f:snd in
+  let columns =
+    Map.map t.columns ~f:(fun packed_column ->
+        Column.packed_select packed_column ~indexes)
+  in
+  { columns; filter = No_filter (Array.length indexes) }
