@@ -1,9 +1,17 @@
 open Base
 
-type t =
+module Filter = struct
+  type _ t =
+    | No_filter : int -> [ `unfiltered ] t (* Stores the length *)
+    | Filter : Bool_array.t -> [ `filtered ] t
+end
+
+type 'a t =
   { columns : (string, Column.packed, String.comparator_witness) Map.t
-  ; filter : Bool_array.t
+  ; filter : 'a Filter.t
   }
+
+type packed = P : 'a t -> packed
 
 let create named_columns =
   match named_columns with
@@ -28,9 +36,7 @@ let create named_columns =
         |> String.concat ~sep:", ")
     else (
       match Map.of_alist (module String) named_columns with
-      | `Ok columns ->
-        let filter = Bool_array.create ~len:first_column_length true in
-        Ok { columns; filter }
+      | `Ok columns -> Ok { columns; filter = No_filter first_column_length }
       | `Duplicate_key column_name ->
         Or_error.errorf "duplicate column name %s" column_name)
 
@@ -47,7 +53,10 @@ let get_column_exn t column_name = Option.value_exn (get_column t column_name)
 let column_names t = Map.keys t.columns
 let named_columns t = Map.to_alist t.columns
 
-let to_string ?(headers_only = false) t =
+let column_types t =
+  named_columns t |> List.map ~f:(fun (_key, column) -> Column.packed_elt_name column)
+
+let to_string (type a) ?(headers_only = false) (t : a t) =
   let named_columns = named_columns t in
   let header =
     List.map named_columns ~f:(fun (name, column) ->
@@ -59,16 +68,25 @@ let to_string ?(headers_only = false) t =
   else (
     let values =
       List.map named_columns ~f:(fun (name, column) ->
-          name ^ ":\n[\n" ^ Column.packed_to_string ~filter:t.filter column ^ "]")
+          let filter =
+            match t.filter with
+            | No_filter _ -> None
+            | Filter f -> Some f
+          in
+          name ^ ":\n[\n" ^ Column.packed_to_string ?filter column ^ "]")
       |> String.concat ~sep:"\n"
     in
     header ^ "\n---\n" ^ values)
 
-let length t = Bool_array.num_set t.filter
+let length (type a) (t : a t) =
+  match t.filter with
+  | No_filter len -> len
+  | Filter f -> Bool_array.num_set f
+
 let num_rows = length
 let num_cols t = Map.length t.columns
 
-let to_aligned_rows t =
+let to_aligned_rows (type a) (t : a t) =
   let named_columns = named_columns t |> Array.of_list in
   let max_len_per_column =
     Array.map named_columns ~f:(fun (name, _) -> String.length name)
@@ -79,17 +97,19 @@ let to_aligned_rows t =
       ~escape_char:'\\'
     |> Staged.unstage
   in
+  let row ~index =
+    Array.mapi named_columns ~f:(fun i (_, column) ->
+        let str = Column.packed_get_string column index |> escape in
+        max_len_per_column.(i) <- max max_len_per_column.(i) (String.length str);
+        str)
+  in
   let rows =
-    List.init (Bool_array.length t.filter) ~f:(fun j ->
-        if Bool_array.get t.filter j
-        then
-          Array.mapi named_columns ~f:(fun i (_, column) ->
-              let str = Column.packed_get_string column j |> escape in
-              max_len_per_column.(i) <- max max_len_per_column.(i) (String.length str);
-              str)
-          |> Option.some
-        else None)
-    |> List.filter_opt
+    match t.filter with
+    | No_filter len -> List.init len ~f:(fun index -> row ~index)
+    | Filter filter ->
+      List.init (Bool_array.length filter) ~f:(fun index ->
+          if Bool_array.get filter index then row ~index |> Option.some else None)
+      |> List.filter_opt
   in
   let header = Array.map named_columns ~f:fst in
   let delim = Array.map max_len_per_column ~f:(fun l -> String.make (l + 1) '-') in
@@ -100,14 +120,17 @@ let to_aligned_rows t =
           String.make pad ' ' ^ cell)
       |> String.concat_array)
 
-let copy t =
-  { columns = Map.map t.columns ~f:Column.(packed_copy ~filter:t.filter)
-  ; filter = Bool_array.create true ~len:(Bool_array.num_set t.filter)
-  }
+let copy (type a) (t : a t) =
+  let filter, len =
+    match t.filter with
+    | No_filter len -> None, len
+    | Filter filter -> Some filter, Bool_array.num_set filter
+  in
+  { columns = Map.map t.columns ~f:Column.(packed_copy ?filter); filter = No_filter len }
 
 (* Applicative module for filtering, mapping, etc. *)
 module Row_map = struct
-  type nonrec 'a t_ = t -> (index:int -> 'a) Staged.t
+  type nonrec 'a t_ = packed -> (index:int -> 'a) Staged.t
 
   module A = Applicative.Make (struct
     type 'a t = 'a t_
@@ -135,7 +158,8 @@ module Row_map = struct
   include App
   include Applicative.Make_let_syntax (App) (Open_on_rhs_intf) (App)
 
-  let column mod_ name df =
+  let column : type a b. (a, b) Array_intf.t -> string -> a t =
+   fun mod_ name (P df) ->
     let column = Column.extract_exn (get_column_exn df name) mod_ in
     Staged.stage (fun ~index -> Column.get column index)
 
@@ -144,40 +168,50 @@ module Row_map = struct
   let string = column Native_array.string
 end
 
-let filter t (f : bool Row_map.t) =
-  let f = Staged.unstage (f t) in
-  let filter = Bool_array.mapi t.filter ~f:(fun index b -> b && f ~index) in
-  { columns = t.columns; filter }
+let filter (type a) (t : a t) (f : bool Row_map.t) =
+  let f = Staged.unstage (f (P t)) in
+  let filter =
+    match t.filter with
+    | No_filter len -> Bool_array.create true ~len
+    | Filter filter -> filter
+  in
+  let filter = Bool_array.mapi filter ~f:(fun index b -> b && f ~index) in
+  { columns = t.columns; filter = Filter filter }
 
-let map : type a b. t -> (a, b) Array_intf.t -> a Row_map.t -> (a, b) Column.t =
+let map : type a b c. c t -> (a, b) Array_intf.t -> a Row_map.t -> (a, b) Column.t =
  fun t mod_ f ->
   let (module M) = mod_ in
   if length t = 0
   then Column.of_array mod_ [||]
   else (
-    let f = Staged.unstage (f t) in
+    let f = Staged.unstage (f (P t)) in
     let new_index = ref 0 in
     (* Lazy creation of the array as we need to know the first value
        to be able to create this. *)
     let data = ref None in
-    Bool_array.iteri t.filter ~f:(fun index b ->
-        if b
-        then (
-          let v = f ~index in
-          let data =
-            match !data with
-            | None ->
-              let d = M.create v ~len:(length t) in
-              data := Some d;
-              d
-            | Some data -> data
-          in
-          M.set data !new_index v;
-          Int.incr new_index));
+    let on_row index b =
+      if b
+      then (
+        let v = f ~index in
+        let data =
+          match !data with
+          | None ->
+            let d = M.create v ~len:(length t) in
+            data := Some d;
+            d
+          | Some data -> data
+        in
+        M.set data !new_index v;
+        Int.incr new_index)
+    in
+    (match t.filter with
+    | No_filter len ->
+      for i = 0 to len - 1 do
+        on_row i true
+      done
+    | Filter filter -> Bool_array.iteri filter ~f:on_row);
     match !data with
     | None -> Column.of_array mod_ [||]
     | Some data -> Column.of_data mod_ data)
 
-let map_and_add_column ?(only_filtered = false) _t =
-  ignore only_filtered;
-  failwith "not implemented yet"
+let map_and_add_column _t = failwith "not implemented yet"

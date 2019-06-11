@@ -29,4 +29,12 @@ let () =
         Float.of_int pi +. e]
   in
   Stdio.printf "> %d\n%!" (Df.length df);
+  Stdio.print_endline (Column.to_string sum_df);
+  let sum_df =
+    Df.map
+      df
+      Native_array.float
+      Df.Row_map.(map2 (int col_pi) (float col_e2) ~f:(fun pi e -> Float.of_int pi +. e))
+  in
+  Stdio.printf "> %d\n%!" (Df.length df);
   Stdio.print_endline (Column.to_string sum_df)
