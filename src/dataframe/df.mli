@@ -1,3 +1,8 @@
+(* TODO: add [cast].
+   TODO: maybe add [join] ?
+   TODO: handle explicit headers in [Csv.read] ?
+   TODO: automatic cast for [Csv.read].
+  *)
 open Base
 
 (* The phantom type is used to indicate whether a filter applies to the
@@ -36,8 +41,10 @@ val num_rows : _ t -> int
 val num_cols : _ t -> int
 
 module Csv : sig
-  val read : string -> [ `not_implemented_yet ]
-  val write : _ t -> string -> [ `not_implemented_yet ]
+  val read : string -> [ `unfiltered ] t Or_error.t
+  val read_exn : string -> [ `unfiltered ] t
+  val write : _ t -> string -> unit Or_error.t
+  val write_exn : _ t -> string -> unit
 end
 
 module Row_map : sig

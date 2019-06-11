@@ -43,8 +43,47 @@ let create named_columns =
 let create_exn columns = create columns |> Or_error.ok_exn
 
 module Csv = struct
-  let read _filename = `not_implemented_yet
-  let write _t _filename = `not_implemented_yet
+  let read filename =
+    let csv = Csv.load filename in
+    if Csv.columns csv = 0
+    then Or_error.errorf "no columns in csv file %s" filename
+    else (
+      let lines = Csv.lines csv in
+      if lines = 0
+      then Or_error.errorf "no rows in csv file %s" filename
+      else (
+        let csv = Csv.transpose csv in
+        let columns =
+          List.map csv ~f:(function
+              | [] -> assert false (* should be caught by earlier checks *)
+              | header :: data ->
+                let column = Column.of_array Native_array.string (List.to_array data) in
+                header, Column.P column)
+        in
+        match Map.of_alist (module String) columns with
+        | `Duplicate_key key ->
+          Or_error.errorf "multiple columns with header %s in %s" key filename
+        | `Ok columns -> Ok { columns; filter = No_filter (lines - 1) }))
+
+  let read_exn filename = Or_error.ok_exn (read filename)
+
+  let write_exn (type a) (t : a t) filename =
+    Map.to_alist t.columns
+    |> List.map ~f:(fun (header, column) ->
+           let column =
+             match t.filter with
+             | No_filter len ->
+               List.init len ~f:(fun index -> Column.packed_get_string column index)
+             | Filter filter ->
+               Bool_array.indexes filter ~value:true
+               |> Array.map ~f:(Column.packed_get_string column)
+               |> Array.to_list
+           in
+           header :: column)
+    |> Csv.transpose
+    |> Csv.save filename
+
+  let write t filename = Or_error.try_with (fun () -> write_exn t filename)
 end
 
 let get_column t column_name = Map.find t.columns column_name

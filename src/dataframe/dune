@@ -1,4 +1,4 @@
 (library
   (name dataframe)
   (public_name dataframe)
-  (libraries base stdio))
+  (libraries base csv stdio))
