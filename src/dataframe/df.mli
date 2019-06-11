@@ -12,8 +12,14 @@ val create_exn : (string * Column.packed) list -> [ `unfiltered ] t
     are shared which may have some consequences if they are mutable.
 *)
 val copy : _ t -> [`unfiltered ] t
+
+(* The returned column below contains the filtered and unfiltered
+   element. Maybe we should have separate functions for both cases.
+*)
 val get_column : _ t -> string -> Column.packed option
 val get_column_exn : _ t -> string -> Column.packed
+val add_column : [`unfiltered] t -> name:string -> (_, _) Column.t -> [ `unfiltered] t Or_error.t
+val add_column_exn : [`unfiltered] t -> name:string -> (_, _) Column.t -> [ `unfiltered] t
 val column_names : _ t -> string list
 val column_types : _ t -> string list
 val named_columns : _ t -> (string * Column.packed) list
@@ -59,4 +65,7 @@ val map : _ t -> ('a, 'b) Array_intf.t -> 'a Row_map.t ->  ('a, 'b) Column.t
     applying [f] to each row in [t].
 *)
 val map_and_add_column
- : [ `unfiltered] t -> name:string -> 'a Row_map.t -> ('a, 'b) Array_intf.t -> [ `unfiltered ] t
+ : [ `unfiltered] t -> name:string -> ('a, 'b) Array_intf.t -> 'a Row_map.t -> [ `unfiltered ] t Or_error.t
+
+val map_and_add_column_exn
+ : [ `unfiltered] t -> name:string -> ('a, 'b) Array_intf.t -> 'a Row_map.t -> [ `unfiltered ] t

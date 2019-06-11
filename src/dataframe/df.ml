@@ -214,4 +214,17 @@ let map : type a b c. c t -> (a, b) Array_intf.t -> a Row_map.t -> (a, b) Column
     | None -> Column.of_array mod_ [||]
     | Some data -> Column.of_data mod_ data)
 
-let map_and_add_column _t = failwith "not implemented yet"
+let add_column t ~name column =
+  match t.filter with
+  | No_filter len ->
+    if Map.mem t.columns name
+    then Or_error.errorf "column %s already exists in dataframe" name
+    else if len <> Column.length column
+    then Or_error.errorf "length mismatch %d <> %d" len (Column.length column)
+    else (
+      let columns = Map.add_exn t.columns ~key:name ~data:(P column) in
+      Ok { columns; filter = t.filter })
+
+let add_column_exn t ~name column = add_column t ~name column |> Or_error.ok_exn
+let map_and_add_column t ~name mod_ f = add_column t ~name (map t mod_ f)
+let map_and_add_column_exn t ~name mod_ f = add_column_exn t ~name (map t mod_ f)
