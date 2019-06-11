@@ -167,7 +167,7 @@ let copy (type a) (t : a t) =
   { columns = Map.map t.columns ~f:Column.(packed_copy ?filter); filter = No_filter len }
 
 (* Applicative module for filtering, mapping, etc. *)
-module Row_map = struct
+module R = struct
   type nonrec 'a t_ = packed -> (index:int -> 'a) Staged.t
 
   module A = Applicative.Make (struct
@@ -206,7 +206,7 @@ module Row_map = struct
   let string = column Native_array.string
 end
 
-let filter (type a) (t : a t) (f : bool Row_map.t) =
+let filter (type a) (t : a t) (f : bool R.t) =
   let f = Staged.unstage (f (P t)) in
   let filter =
     match t.filter with
@@ -216,7 +216,7 @@ let filter (type a) (t : a t) (f : bool Row_map.t) =
   let filter = Bool_array.mapi filter ~f:(fun index b -> b && f ~index) in
   { columns = t.columns; filter = Filter filter }
 
-let map : type a b c. c t -> (a, b) Array_intf.t -> a Row_map.t -> (a, b) Column.t =
+let map : type a b c. c t -> (a, b) Array_intf.t -> a R.t -> (a, b) Column.t =
  fun t mod_ f ->
   let (module M) = mod_ in
   if length t = 0

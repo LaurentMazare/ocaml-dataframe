@@ -10,5 +10,5 @@ It aims at providing the following functionalites:
   ...).
 - Functional api with immutable dataframes.
 - Use applicative for filtering dataframes and for map like operations.
-- Read/write from csv with automated type detection (TODO).
+- Read/write from csv with automated type detection.
 - Maybe support join ? (TODO)
