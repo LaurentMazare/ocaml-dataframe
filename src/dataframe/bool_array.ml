@@ -65,3 +65,14 @@ let mapi t ~f =
     if !v <> 0 then Bytes.unsafe_set data byte_index (Char.of_int_exn !v)
   done;
   { data; length = t.length; num_set = !num_set }
+
+let indexes t ~value =
+  let indexes_len = if value then t.num_set else t.length - t.num_set in
+  let indexes = Array.create (-1) ~len:indexes_len in
+  let indexes_i = ref 0 in
+  iteri t ~f:(fun i b ->
+      if Bool.( = ) b value
+      then (
+        indexes.(!indexes_i) <- i;
+        Int.incr indexes_i));
+  indexes

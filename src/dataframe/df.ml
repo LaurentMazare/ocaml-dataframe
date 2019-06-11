@@ -234,14 +234,7 @@ let sort (type a) (t : a t) f ~compare =
     match t.filter with
     | No_filter len -> Array.init len ~f:(fun index -> f ~index, index)
     | Filter filter ->
-      let indexes = Array.create None ~len:(Bool_array.num_set filter) in
-      let current_index = ref 0 in
-      Bool_array.iteri filter ~f:(fun index b ->
-          if b
-          then (
-            indexes.(!current_index) <- Some (f ~index, index);
-            Int.incr current_index));
-      Array.map indexes ~f:(fun opt -> Option.value_exn opt)
+      Bool_array.indexes filter ~value:true |> Array.map ~f:(fun index -> f ~index, index)
   in
   Array.sort indexes ~compare:(fun (a1, _) (a2, _) -> compare a1 a2);
   let indexes = Array.map indexes ~f:snd in
