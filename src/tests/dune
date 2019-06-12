@@ -1,0 +1,5 @@
+(library
+ (name dataframe_tests)
+ (inline_tests)
+ (libraries base dataframe)
+ (preprocess (pps ppx_expect ppx_let)))
