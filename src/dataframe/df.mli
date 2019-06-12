@@ -1,7 +1,6 @@
 (* TODO: add [cast].
    TODO: maybe add [join] ?
    TODO: add [group] and [group_by].
-   TODO: add [sort_by].
    TODO: handle explicit headers in [Csv.read] ?
    TODO: automatic cast for [Csv.read].
   *)
@@ -147,3 +146,10 @@ val map_and_add_column_exn
     the [compare] function applied to the result of [r] on each row.
 *)
 val sort : _ t -> 'a R.t -> compare:('a -> 'a -> int) -> [ `unfiltered ] t
+
+(** [sort_by ?reverse t ~name] returns a new dataframe by sorting [t] using the
+    given column name.
+    The default value for [reverse] is [false], if set the dataframe is returned
+    in reversed order.
+*)
+val sort_by : ?reverse:bool -> _ t -> name:string -> [ `unfiltered ] t

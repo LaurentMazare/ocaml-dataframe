@@ -196,6 +196,9 @@ module R = struct
   include App
   include Applicative.Make_let_syntax (App) (Open_on_rhs_intf) (App)
 
+  (* We probably don't need to pass a full array_intf here, a witness
+     for the element type would be enough.
+  *)
   let column : type a b. (a, b) Array_intf.t -> string -> a t =
    fun mod_ name (P df) ->
     let column = Column.extract_exn (get_column_exn df name) mod_ in
@@ -282,3 +285,10 @@ let sort (type a) (t : a t) f ~compare =
         Column.packed_select packed_column ~indexes)
   in
   { columns; filter = No_filter (Array.length indexes) }
+
+let sort_by (type a) ?(reverse = false) (t : a t) ~name =
+  let (P column) = get_column_exn t name in
+  let (module M) = Column.mod_ column in
+  let f _ = Staged.stage (fun ~index -> Column.get column index) in
+  let compare = if reverse then fun t1 t2 -> -M.Elt.compare t1 t2 else M.Elt.compare in
+  sort t f ~compare

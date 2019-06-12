@@ -7,6 +7,7 @@ val create : ('a, 'b) Array_intf.t -> 'a -> len:int -> ('a, 'b) t
 val of_data : ('a, 'b) Array_intf.t -> 'b -> ('a, 'b) t
 val of_array : ('a, 'b) Array_intf.t -> 'a array -> ('a, 'b) t
 val copy : ?filter:Bool_array.t -> ('a, 'b) t -> ('a, 'b) t
+val mod_ : ('a, 'b) t -> ('a, 'b) Array_intf.t
 val get : ('a, _) t -> int -> 'a
 val set : ('a, _) t -> int -> 'a -> unit
 val length : _ t -> int

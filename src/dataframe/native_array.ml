@@ -41,6 +41,13 @@ module MakeOption (E : Array_intf.Elt) :
   module Elt = struct
     type t = E.t option
 
+    let compare t1 t2 =
+      match t1, t2 with
+      | Some t1, Some t2 -> E.compare t1 t2
+      | None, Some _ -> 1
+      | Some _, None -> -1
+      | None, None -> 0
+
     let name = E.name ^ " option"
     let to_string = Option.value_map ~default:"" ~f:E.to_string
 
@@ -79,7 +86,7 @@ module MakeOption (E : Array_intf.Elt) :
 end
 
 module Int = Make (struct
-  type t = int
+  include Int
 
   let name = "int"
   let to_string = Int.to_string
@@ -90,7 +97,7 @@ module Int = Make (struct
 end)
 
 module Float = Make (struct
-  type t = float
+  include Float
 
   let name = "float"
   let to_string = Float.to_string
@@ -101,7 +108,7 @@ module Float = Make (struct
 end)
 
 module String = Make (struct
-  type t = string
+  include String
 
   let name = "float"
   let to_string = Fn.id

@@ -35,6 +35,8 @@ let set : type a b. (a, b) t -> int -> a -> unit =
   let (module M) = t.mod_ in
   M.set t.data i v
 
+let mod_ t = t.mod_
+
 let extract : type a b. packed -> (a, b) Array_intf.t -> (a, b) t option =
  fun (P t) (module M) ->
   let (module M') = t.mod_ in
