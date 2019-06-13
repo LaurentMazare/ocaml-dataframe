@@ -1,6 +1,5 @@
 (* TODO: add [cast].
    TODO: maybe add [join] ?
-   TODO: add [group] and [group_by].
    TODO: handle explicit headers in [Csv.read] ?
    TODO: automatic cast for [Csv.read].
    TODO: add tests.
@@ -154,3 +153,16 @@ val sort : _ t -> 'a R.t -> compare:('a -> 'a -> int) -> [ `unfiltered ] t
     in reversed order.
 *)
 val sort_by : ?reverse:bool -> _ t -> name:string -> [ `unfiltered ] t
+
+(** [group t f] returns a list of dataframe containing an element for each
+    value obtained by applying [f] to each row. This list is made of pairs
+    where the first element is the output of [f] and the second the initial
+    dataframe filtered to only contain row which [f] output this value.
+
+    The current implementation uses a polymorphic hashtbl so may have issues
+    with complex or mutable types.
+*)
+val group
+  :  _ t
+  -> 'a R.t
+  -> ('a * [ `filtered ] t) list

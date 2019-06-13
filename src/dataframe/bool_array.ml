@@ -76,3 +76,28 @@ let indexes t ~value =
         indexes.(!indexes_i) <- i;
         Int.incr indexes_i));
   indexes
+
+(* We could also use a phantom type rather than a separate module. *)
+module Mutable = struct
+  type immutable = t
+  type nonrec t = t
+
+  let create = create
+  let get = get
+
+  let set t i value =
+    if i < 0
+    then Printf.failwithf "negative index %d" i ()
+    else if i >= t.length
+    then Printf.failwithf "index above length %d >= %d" i t.length ()
+    else (
+      let byte_index = i lsr 3 in
+      let byte = Bytes.get t.data byte_index |> Char.to_int in
+      let index_in_byte = i land 7 in
+      let bit_set = 1 lsl index_in_byte in
+      let byte = if value then byte lor bit_set else byte land lnot bit_set in
+      Bytes.unsafe_set t.data byte_index (Char.of_int_exn byte))
+
+  let length = length
+  let finish = copy
+end

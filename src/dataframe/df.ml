@@ -42,6 +42,14 @@ let create named_columns =
 
 let create_exn columns = create columns |> Or_error.ok_exn
 
+let iter_row (type a) (t : a t) ~f =
+  match t.filter with
+  | No_filter len ->
+    for i = 0 to len - 1 do
+      f i
+    done
+  | Filter filter -> Bool_array.iteri filter ~f:(fun i b -> if b then f i)
+
 module Csv = struct
   let read filename =
     let csv = Csv.load filename in
@@ -116,10 +124,16 @@ let to_string (type a) ?(headers_only = false) (t : a t) =
     in
     header ^ "\n---\n" ^ values)
 
+(* This returns the filtered length. *)
 let length (type a) (t : a t) =
   match t.filter with
   | No_filter len -> len
   | Filter f -> Bool_array.num_set f
+
+let unfiltered_length (type a) (t : a t) =
+  match t.filter with
+  | No_filter len -> len
+  | Filter f -> Bool_array.length f
 
 let num_rows = length
 let num_cols t = Map.length t.columns
@@ -230,9 +244,7 @@ let map : type a b c. c t -> (a, b) Array_intf.t -> a R.t -> (a, b) Column.t =
     (* Lazy creation of the array as we need to know the first value
        to be able to create this. *)
     let data = ref None in
-    let on_row index b =
-      if b
-      then (
+    iter_row t ~f:(fun index ->
         let v = f ~index in
         let data =
           match !data with
@@ -243,14 +255,7 @@ let map : type a b c. c t -> (a, b) Array_intf.t -> a R.t -> (a, b) Column.t =
           | Some data -> data
         in
         M.set data !new_index v;
-        Int.incr new_index)
-    in
-    (match t.filter with
-    | No_filter len ->
-      for i = 0 to len - 1 do
-        on_row i true
-      done
-    | Filter filter -> Bool_array.iteri filter ~f:on_row);
+        Int.incr new_index);
     match !data with
     | None -> Column.of_array mod_ [||]
     | Some data -> Column.of_data mod_ data)
@@ -292,3 +297,19 @@ let sort_by (type a) ?(reverse = false) (t : a t) ~name =
   let f _ = Staged.stage (fun ~index -> Column.get column index) in
   let compare = if reverse then fun t1 t2 -> -M.Elt.compare t1 t2 else M.Elt.compare in
   sort t f ~compare
+
+let group (type a) (t : a t) f =
+  let len = unfiltered_length t in
+  let f = Staged.unstage (f (P t)) in
+  let values_and_filters = Hashtbl.Poly.create () in
+  iter_row t ~f:(fun index ->
+      let v = f ~index in
+      let filter =
+        Hashtbl.find_or_add values_and_filters v ~default:(fun () ->
+            Bool_array.Mutable.create false ~len)
+      in
+      Bool_array.Mutable.set filter index true);
+  Hashtbl.to_alist values_and_filters
+  |> List.map ~f:(fun (key, filter) ->
+         let filter = Bool_array.Mutable.finish filter in
+         key, { columns = t.columns; filter = Filter filter })
