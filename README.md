@@ -1,6 +1,8 @@
 # ocaml-dataframe
 Simple and (reasonably) type-safe dataframe api implemented in pure ocaml
 
+[![Build Status](https://travis-ci.org/LaurentMazare/ocaml-dataframe.svg?branch=master)](https://travis-ci.org/LaurentMazare/ocaml-dataframe)
+
 This is mostly a work in progress to experiment with how to use the ocaml
 type system to provide more type safety to dataframes.
 It aims at providing the following functionalites:
