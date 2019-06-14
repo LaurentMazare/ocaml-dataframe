@@ -2,7 +2,6 @@
 type t
 
 val create : bool -> len:int -> t
-val copy : t -> t
 val get : t -> int -> bool
 
 (* The number of elements of the array set to true. *)

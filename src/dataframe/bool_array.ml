@@ -19,32 +19,34 @@ let create b ~len:length =
     let data = Bytes.make data_length fill_value in
     { data; length; num_set })
 
-let copy t = { data = Bytes.copy t.data; length = t.length; num_set = t.num_set }
 let length t = t.length
 
-let get t i =
+let get_ data i ~length =
   if i < 0
   then Printf.failwithf "negative index %d" i ()
-  else if i >= t.length
-  then Printf.failwithf "index above length %d >= %d" i t.length ()
+  else if i >= length
+  then Printf.failwithf "index above length %d >= %d" i length ()
   else (
-    let byte = Bytes.get t.data (i lsr 3) |> Char.to_int in
+    let byte = Bytes.get data (i lsr 3) |> Char.to_int in
     let index_in_byte = i land 7 in
     byte land (1 lsl index_in_byte) <> 0)
 
+let get t i = get_ t.data i ~length:t.length
 let num_set t = t.num_set
 
-let iteri t ~f =
-  let bytes_length = Bytes.length t.data in
+let iteri_ data ~f ~length =
+  let bytes_length = Bytes.length data in
   for byte_index = 0 to bytes_length - 1 do
-    let byte = Bytes.unsafe_get t.data byte_index |> Char.to_int in
+    let byte = Bytes.unsafe_get data byte_index |> Char.to_int in
     let bit_offset = 8 * byte_index in
-    let bits_used = if byte_index <> bytes_length - 1 then 8 else t.length lsr 3 in
+    let bits_used = if byte_index <> bytes_length - 1 then 8 else length land 7 in
     for i = 0 to bits_used - 1 do
       let bit_set = 1 lsl i in
       f (bit_offset + i) (byte land bit_set <> 0)
     done
   done
+
+let iteri t ~f = iteri_ t.data ~f ~length:t.length
 
 let mapi t ~f =
   let bytes_length = Bytes.length t.data in
@@ -53,7 +55,7 @@ let mapi t ~f =
   for byte_index = 0 to bytes_length - 1 do
     let byte = Bytes.unsafe_get t.data byte_index |> Char.to_int in
     let bit_offset = 8 * byte_index in
-    let bits_used = if byte_index <> bytes_length - 1 then 8 else t.length lsr 3 in
+    let bits_used = if byte_index <> bytes_length - 1 then 8 else t.length land 7 in
     let v = ref 0 in
     for i = 0 to bits_used - 1 do
       let bit_set = 1 lsl i in
@@ -80,10 +82,17 @@ let indexes t ~value =
 (* We could also use a phantom type rather than a separate module. *)
 module Mutable = struct
   type immutable = t
-  type nonrec t = t
 
-  let create = create
-  let get = get
+  type t =
+    { data : Bytes.t
+    ; length : int
+    }
+
+  let create v ~len =
+    let t = create v ~len in
+    { data = t.data; length = t.length }
+
+  let get t i = get_ t.data i ~length:t.length
 
   let set t i value =
     if i < 0
@@ -98,6 +107,11 @@ module Mutable = struct
       let byte = if value then byte lor bit_set else byte land lnot bit_set in
       Bytes.unsafe_set t.data byte_index (Char.of_int_exn byte))
 
-  let length = length
-  let finish = copy
+  let length t = t.length
+
+  let finish : t -> immutable =
+   fun t ->
+    let num_set = ref 0 in
+    iteri_ t.data ~length:t.length ~f:(fun _ b -> if b then Int.incr num_set);
+    { data = Bytes.copy t.data; length = t.length; num_set = !num_set }
 end
