@@ -226,6 +226,8 @@ module R = struct
   let string = column Native_array.string
 end
 
+open R.Let_syntax
+
 let filter (type a) (t : a t) (f : bool R.t) =
   let f = Staged.unstage (f (P t)) in
   let filter =
@@ -322,3 +324,36 @@ let fold (type a) (t : a t) ~init ~f =
   let acc = ref init in
   iter_row t ~f:(fun index -> acc := f ~index !acc);
   !acc
+
+module Float_ = struct
+  let sum (type a) (t : a t) ~name =
+    let f =
+      [%map_open
+        let v = R.float name in
+        fun acc -> acc +. v]
+    in
+    fold t ~init:0. ~f
+
+  let mean (type a) (t : a t) ~name =
+    let sum = sum t ~name in
+    let nrows = length t in
+    if nrows = 0 then None else Some (sum /. Float.of_int nrows)
+end
+
+module Int_ = struct
+  let sum (type a) (t : a t) ~name =
+    let f =
+      [%map_open
+        let v = R.int name in
+        fun acc -> acc + v]
+    in
+    fold t ~init:0 ~f
+
+  let mean (type a) (t : a t) ~name =
+    let sum = sum t ~name in
+    let nrows = length t in
+    if nrows = 0 then None else Some (Float.of_int sum /. Float.of_int nrows)
+end
+
+module Float = Float_
+module Int = Int_

@@ -170,3 +170,15 @@ val group
   :  _ t
   -> 'a R.t
   -> ('a * [ `filtered ] t) list
+
+(** {3 Handling columns with specific types } *)
+
+module Float : sig
+  val sum : _ t -> name:string -> float
+  val mean : _ t -> name:string -> float option
+end
+
+module Int : sig
+  val sum : _ t -> name:string -> int
+  val mean : _ t -> name:string -> float option
+end
