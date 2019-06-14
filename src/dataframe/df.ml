@@ -183,6 +183,27 @@ let copy (type a) (t : a t) =
   in
   { columns = Map.map t.columns ~f:Column.(packed_copy ?filter); filter = No_filter len }
 
+let filter_columns (type a) (t : a t) ~names =
+  let names = List.dedup_and_sort names ~compare:String.compare in
+  let columns, unknown_names =
+    List.partition_map names ~f:(fun name ->
+        match Map.find t.columns name with
+        | Some column -> `Fst (name, column)
+        | None -> `Snd name)
+  in
+  if not (List.is_empty unknown_names)
+  then
+    Or_error.errorf
+      "some columns cannot be found: %s not in %s"
+      (String.concat unknown_names ~sep:",")
+      (Map.keys t.columns |> String.concat ~sep:",")
+  else (
+    let columns = Map.of_alist_exn (module String) columns in
+    Ok { columns; filter = t.filter })
+
+let filter_columns_exn (type a) (t : a t) ~names =
+  filter_columns t ~names |> Or_error.ok_exn
+
 (* Applicative module for filtering, mapping, etc. *)
 module R = struct
   type nonrec 'a t_ = packed -> (index:int -> 'a) Staged.t

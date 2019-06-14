@@ -43,6 +43,17 @@ val create_exn : (string * Column.packed) list -> [ `unfiltered ] t
 *)
 val copy : _ t -> [`unfiltered ] t
 
+(** [filter_columns t ~names] returns a dataframe only containing
+    columns from [names]. If there are column names in [names] that do
+    not exist in [t], an error is returned.
+*)
+val filter_columns : 'a t -> names:string list -> 'a t Or_error.t
+
+(** Similar to [filter_columns] but raises an exception rather than
+    returning an error.
+*)
+val filter_columns_exn : 'a t -> names:string list -> 'a t
+
 (** {3 Column Operations} *)
 
 (** [get_column t column_name] returns the column of [t] which name matches

@@ -230,13 +230,42 @@ let%expect_test _ =
           fun acc -> acc + pi]
       in
       let sum_pi = Df.fold df ~init:0 ~f:sum_pi in
-      Stdio.printf "%d\n%!" sum_pi;
-      [%expect {| 36 |}];
+      Stdio.printf
+        "%d %d %f\n%!"
+        sum_pi
+        (Df.Int.sum df ~name:col_pi)
+        (Df.Int.mean df ~name:col_pi |> Option.value ~default:Float.nan);
+      [%expect {| 36 36 4.000000 |}];
       let sum_e_nrows =
         [%map_open
           let e = Df.R.float col_e1 in
           fun (acc_sum, acc_cnt) -> acc_sum +. e, acc_cnt + 1]
       in
       let sum_e, nrows = Df.fold df ~init:(0., 0) ~f:sum_e_nrows in
-      Stdio.printf "%d %f\n%!" nrows sum_e;
-      [%expect {| 9 39.000000 |}])
+      Stdio.printf
+        "%d %f %f\n%!"
+        nrows
+        sum_e
+        (Df.Float.mean df ~name:col_e1 |> Option.value ~default:Float.nan);
+      [%expect {| 9 39.000000 4.333333 |}])
+
+let%expect_test _ =
+  with_df ~f:(fun df ->
+      let df = Df.filter_columns_exn df ~names:[ col_e1; col_e2 ] in
+      Df.print df;
+      [%expect
+        {|
+        --- -----------
+          e  sum_n 1/n!
+        --- -----------
+         2.          2.
+         7.          7.
+         1.          1.
+         8.          8.
+         2.          2.
+         8.          8.
+         1.          1.
+         8.          8.
+         2.          2.
+        |}]
+  )
