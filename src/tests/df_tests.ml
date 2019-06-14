@@ -14,7 +14,7 @@ let with_df ~f =
 
 let%expect_test _ =
   with_df ~f:(fun df ->
-      List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
+      Df.print df;
       [%expect
         {|
         --- --- -----------
@@ -37,7 +37,7 @@ let%expect_test _ =
             let pi = Df.R.int col_pi in
             pi = 1]
       in
-      List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
+      Df.print df;
       [%expect
         {|
     --- --- -----------
@@ -51,7 +51,7 @@ let%expect_test _ =
 let%expect_test _ =
   with_df ~f:(fun df ->
       let df = Df.sort_by ~reverse:true df ~name:"e" in
-      List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
+      Df.print df;
       [%expect
         {|
     --- --- -----------
@@ -68,7 +68,7 @@ let%expect_test _ =
      1.   2          1.
   |}];
       let df = Df.sort_by ~reverse:false df ~name:"pi" in
-      List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
+      Df.print df;
       [%expect
         {|
     --- --- -----------
@@ -93,7 +93,7 @@ let%expect_test _ =
             and e = Df.R.float col_e1 in
             pi, e]
       in
-      List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
+      Df.print df;
       [%expect
         {|
     --- --- -----------
@@ -123,7 +123,7 @@ let%expect_test _ =
             and e = Df.R.float col_e1 in
             (e *. e) +. Float.of_int pi]
       in
-      List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline;
+      Df.print df;
       [%expect
         {|
     --- --------- --- -----------
@@ -147,7 +147,7 @@ let%expect_test _ =
       let grouped = List.sort grouped ~compare:Caml.compare in
       List.iter grouped ~f:(fun (key, df) ->
           Stdio.printf "> %d\n%!" key;
-          List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline);
+          Df.print df);
       [%expect
         {|
     > 1
@@ -199,7 +199,7 @@ let%expect_test _ =
       let grouped = List.sort grouped ~compare:Caml.compare in
       List.iter grouped ~f:(fun (key, df) ->
           Stdio.printf "> %d\n%!" key;
-          List.iter (Df.to_aligned_rows df) ~f:Stdio.print_endline);
+          Df.print df);
       [%expect
         {|
     > 0

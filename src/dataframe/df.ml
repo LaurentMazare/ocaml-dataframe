@@ -172,6 +172,9 @@ let to_aligned_rows (type a) (t : a t) =
           String.make pad ' ' ^ cell)
       |> String.concat_array)
 
+let print ?(out_channel = Stdio.Out_channel.stdout) (type a) (t : a t) =
+  Stdio.Out_channel.output_lines out_channel (to_aligned_rows t)
+
 let copy (type a) (t : a t) =
   let filter, len =
     match t.filter with

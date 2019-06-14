@@ -2,14 +2,13 @@
    TODO: maybe add [join] ?
    TODO: handle explicit headers in [Csv.read] ?
    TODO: automatic cast for [Csv.read].
-   TODO: add tests.
-  *)
+*)
 open Base
 
-(** The phantom type is used to indicate whether a filter applies to the
-   data or not.
-   Functions that return an [`unfiltered] usually make a copy of the whole
-   dataframe.
+(** The parameter type is used to indicate whether a filter applies to
+    the data or not.
+    Functions that return an [`unfiltered] usually make a copy of the whole
+    dataframe.
 *)
 type _ t
 
@@ -82,6 +81,7 @@ val named_columns : _ t -> (string * Column.packed) list
 (** {3 Pretty Printing } *)
 val to_string : ?headers_only:bool -> _ t -> string
 val to_aligned_rows : _ t -> string list
+val print : ?out_channel:Stdio.Out_channel.t -> _ t -> unit
 
 (** {3 CSV Reading and Writing } *)
 module Csv : sig
