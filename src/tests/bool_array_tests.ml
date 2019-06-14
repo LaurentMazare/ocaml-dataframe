@@ -83,3 +83,28 @@ let%expect_test _ =
   [%expect {|
     4 3 0111
     4 1 1000 |}]
+
+let%expect_test _ =
+  let test bool_array =
+    let ba = B.Mutable.create false ~len:(Array.length bool_array) in
+    Array.iteri bool_array ~f:(B.Mutable.set ba);
+    let ba = B.Mutable.finish ba in
+    let bool_array' = Array.create false ~len:(Array.length bool_array) in
+    B.iteri ba ~f:(Array.set bool_array');
+    let to_str x =
+      Array.map x ~f:(fun b -> if b then "1" else "0") |> String.concat_array
+    in
+    let str = to_str bool_array in
+    let str' = to_str bool_array' in
+    if String.( <> ) str str' then Stdio.printf "%s <> %s\n%!" str str'
+  in
+  for len = 0 to 18 do
+    for cfg = 0 to (1 lsl len) - 1 do
+      let bool_array = Array.create false ~len in
+      for i = 0 to len - 1 do
+        bool_array.(i) <- cfg land (1 lsl i) <> 0
+      done;
+      test bool_array
+    done
+  done;
+  [%expect {||}]

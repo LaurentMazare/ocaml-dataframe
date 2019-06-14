@@ -40,6 +40,7 @@ let iteri_ data ~f ~length =
     let byte = Bytes.unsafe_get data byte_index |> Char.to_int in
     let bit_offset = 8 * byte_index in
     let bits_used = if byte_index <> bytes_length - 1 then 8 else length land 7 in
+    let bits_used = if bits_used = 0 then 8 else bits_used in
     for i = 0 to bits_used - 1 do
       let bit_set = 1 lsl i in
       f (bit_offset + i) (byte land bit_set <> 0)
@@ -56,6 +57,7 @@ let mapi t ~f =
     let byte = Bytes.unsafe_get t.data byte_index |> Char.to_int in
     let bit_offset = 8 * byte_index in
     let bits_used = if byte_index <> bytes_length - 1 then 8 else t.length land 7 in
+    let bits_used = if bits_used = 0 then 8 else bits_used in
     let v = ref 0 in
     for i = 0 to bits_used - 1 do
       let bit_set = 1 lsl i in
