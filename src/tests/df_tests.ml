@@ -221,3 +221,22 @@ let%expect_test _ =
       2.   5          2.
   |}]
   )
+
+let%expect_test _ =
+  with_df ~f:(fun df ->
+      let sum_pi =
+        [%map_open
+          let pi = Df.R.int col_pi in
+          fun acc -> acc + pi]
+      in
+      let sum_pi = Df.fold df ~init:0 ~f:sum_pi in
+      Stdio.printf "%d\n%!" sum_pi;
+      [%expect {| 36 |}];
+      let sum_e_nrows =
+        [%map_open
+          let e = Df.R.float col_e1 in
+          fun (acc_sum, acc_cnt) -> acc_sum +. e, acc_cnt + 1]
+      in
+      let sum_e, nrows = Df.fold df ~init:(0., 0) ~f:sum_e_nrows in
+      Stdio.printf "%d %f\n%!" nrows sum_e;
+      [%expect {| 9 39.000000 |}])

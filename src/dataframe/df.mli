@@ -142,6 +142,10 @@ val map_and_add_column
 val map_and_add_column_exn
  : [ `unfiltered] t -> name:string -> ('a, 'b) Array_intf.t -> 'a R.t -> [ `unfiltered ] t
 
+val fold : _ t -> init:'a -> f:('a -> 'a) R.t -> 'a
+
+(** {3 Sorting and Grouping } *)
+
 (** [sort t r ~compare] returns a new dataframe by sorting [t] based on
     the [compare] function applied to the result of [r] on each row.
 *)

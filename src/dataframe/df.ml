@@ -316,3 +316,9 @@ let group (type a) (t : a t) f =
   |> List.map ~f:(fun (key, filter) ->
          let filter = Bool_array.Mutable.finish filter in
          key, { columns = t.columns; filter = Filter filter })
+
+let fold (type a) (t : a t) ~init ~f =
+  let f = Staged.unstage (f (P t)) in
+  let acc = ref init in
+  iter_row t ~f:(fun index -> acc := f ~index !acc);
+  !acc
