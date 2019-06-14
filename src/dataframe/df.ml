@@ -346,6 +346,23 @@ let fold (type a) (t : a t) ~init ~f =
   iter_row t ~f:(fun index -> acc := f ~index !acc);
   !acc
 
+let reduce (type a) (t : a t) row_f ~f =
+  let row_f = Staged.unstage (row_f (P t)) in
+  let acc = ref None in
+  iter_row t ~f:(fun index ->
+      let v = row_f ~index in
+      let v =
+        match !acc with
+        | None -> Some v
+        | Some acc -> Some (f acc v)
+      in
+      acc := v);
+  !acc
+
+(* TODO: the [Float_] and [Int_] modules are very similar, use a functor
+   instead ([M.Elt] contains the [compare] function needed for [min] and
+   [max] ?
+*)
 module Float_ = struct
   let sum (type a) (t : a t) ~name =
     let f =
@@ -359,6 +376,9 @@ module Float_ = struct
     let sum = sum t ~name in
     let nrows = length t in
     if nrows = 0 then None else Some (sum /. Float.of_int nrows)
+
+  let min (type a) (t : a t) ~name = reduce t (R.float name) ~f:Float.min
+  let max (type a) (t : a t) ~name = reduce t (R.float name) ~f:Float.max
 end
 
 module Int_ = struct
@@ -374,6 +394,9 @@ module Int_ = struct
     let sum = sum t ~name in
     let nrows = length t in
     if nrows = 0 then None else Some (Float.of_int sum /. Float.of_int nrows)
+
+  let min (type a) (t : a t) ~name = reduce t (R.int name) ~f:Int.min
+  let max (type a) (t : a t) ~name = reduce t (R.int name) ~f:Int.max
 end
 
 module Float = Float_

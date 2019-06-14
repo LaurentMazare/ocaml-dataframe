@@ -69,6 +69,10 @@ val get_string : _ t -> int -> string
 *)
 val to_string : ?max_rows:int -> ?filter:Bool_array.t -> _ t -> string
 
+val fold : ('a, _) t -> init:'b -> f:('b -> 'a -> 'b) -> 'b
+val min : ('a, _) t -> 'a option
+val max : ('a, _) t -> 'a option
+
 (** {3 Operating on Packed Values} *)
 
 (** The [packed] type is used to abstract the type of elements and
@@ -81,7 +85,7 @@ type packed = P : _ t -> packed
 val extract : packed -> ('a, 'b) Array_intf.t -> ('a, 'b) t option
 val extract_exn : packed -> ('a, 'b) Array_intf.t -> ('a, 'b) t
 
-(** {4 Standard Operations} *)
+(** {4 Other Operations} *)
 
 val packed_copy : ?filter:Bool_array.t -> packed -> packed
 val packed_length : packed -> int

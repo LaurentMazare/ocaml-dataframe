@@ -107,6 +107,34 @@ let select (type a b) (t : (a, b) t) ~indexes =
     Array.iteri indexes ~f:(fun i index -> M.set data i (M.get t.data index));
     { mod_ = t.mod_; data })
 
+let fold (type a b) (t : (a, b) t) ~init ~f =
+  let (module M) = t.mod_ in
+  let acc = ref init in
+  for i = 0 to M.length t.data - 1 do
+    acc := f !acc (M.get t.data i)
+  done;
+  !acc
+
+let min (type a b) (t : (a, b) t) =
+  let (module M) = t.mod_ in
+  fold t ~init:None ~f:(fun acc v ->
+      let v =
+        match acc with
+        | None -> v
+        | Some acc -> if M.Elt.compare acc v > 0 then v else acc
+      in
+      Some v)
+
+let max (type a b) (t : (a, b) t) =
+  let (module M) = t.mod_ in
+  fold t ~init:None ~f:(fun acc v ->
+      let v =
+        match acc with
+        | None -> v
+        | Some acc -> if M.Elt.compare acc v < 0 then v else acc
+      in
+      Some v)
+
 let packed_copy ?filter (P t) = P (copy ?filter t)
 let packed_length (P t) = length t
 let packed_elt_name (P t) = elt_name t

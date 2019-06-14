@@ -43,17 +43,6 @@ val create_exn : (string * Column.packed) list -> [ `unfiltered ] t
 *)
 val copy : _ t -> [`unfiltered ] t
 
-(** [filter_columns t ~names] returns a dataframe only containing
-    columns from [names]. If there are column names in [names] that do
-    not exist in [t], an error is returned.
-*)
-val filter_columns : 'a t -> names:string list -> 'a t Or_error.t
-
-(** Similar to [filter_columns] but raises an exception rather than
-    returning an error.
-*)
-val filter_columns_exn : 'a t -> names:string list -> 'a t
-
 (** {3 Column Operations} *)
 
 (** [get_column t column_name] returns the column of [t] which name matches
@@ -88,6 +77,17 @@ val column_types : _ t -> string list
     names.
 *)
 val named_columns : _ t -> (string * Column.packed) list
+
+(** [filter_columns t ~names] returns a dataframe only containing
+    columns from [names]. If there are column names in [names] that do
+    not exist in [t], an error is returned.
+*)
+val filter_columns : 'a t -> names:string list -> 'a t Or_error.t
+
+(** Similar to [filter_columns] but raises an exception rather than
+    returning an error.
+*)
+val filter_columns_exn : 'a t -> names:string list -> 'a t
 
 (** {3 Pretty Printing } *)
 val to_string : ?headers_only:bool -> _ t -> string
@@ -153,7 +153,11 @@ val map_and_add_column
 val map_and_add_column_exn
  : [ `unfiltered] t -> name:string -> ('a, 'b) Array_intf.t -> 'a R.t -> [ `unfiltered ] t
 
+(** [fold t ~init ~f] folds over filtered rows of [t] in order.
+*)
 val fold : _ t -> init:'a -> f:('a -> 'a) R.t -> 'a
+
+val reduce : _ t -> 'a R.t -> f:('a -> 'a -> 'a) -> 'a option
 
 (** {3 Sorting and Grouping } *)
 
@@ -187,9 +191,13 @@ val group
 module Float : sig
   val sum : _ t -> name:string -> float
   val mean : _ t -> name:string -> float option
+  val min : _ t -> name:string -> float option
+  val max : _ t -> name:string -> float option
 end
 
 module Int : sig
   val sum : _ t -> name:string -> int
   val mean : _ t -> name:string -> float option
+  val min : _ t -> name:string -> int option
+  val max : _ t -> name:string -> int option
 end
