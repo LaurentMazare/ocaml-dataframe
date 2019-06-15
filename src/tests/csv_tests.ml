@@ -35,7 +35,8 @@ let%expect_test _ =
         i < 10]
   in
   Df.print slice_df;
-  [%expect {|
+  [%expect
+    {|
     ------- ------------ --------------------- ---------------------
      col-i2  col-indexes               col-sin           col-sin-str
     ------- ------------ --------------------- ---------------------
@@ -49,3 +50,36 @@ let%expect_test _ =
          49            7   0.65698659871878906   0.65698659871878906
          64            8   0.98935824662338179   0.98935824662338179
          81            9   0.41211848524175659   0.41211848524175659 |}]
+
+let%expect_test _ =
+  let df = build_df () in
+  Csv.write_exn df csv_filename;
+  let df =
+    Csv.read_exn
+      ~columns:
+        [ col_i, Array_intf.P Native_array.int; col_sin, Array_intf.P Native_array.float ]
+      csv_filename
+  in
+  let slice_df =
+    Df.filter
+      df
+      [%map_open
+        let i = Df.R.int col_i in
+        i < 10]
+  in
+  Df.print slice_df;
+  [%expect
+    {|
+    ------------ ---------------------
+     col-indexes               col-sin
+    ------------ ---------------------
+               0                    0.
+               1    0.8414709848078965
+               2   0.90929742682568171
+               3   0.14112000805986721
+               4   -0.7568024953079282
+               5  -0.95892427466313845
+               6  -0.27941549819892586
+               7   0.65698659871878906
+               8   0.98935824662338179
+               9   0.41211848524175659 |}]

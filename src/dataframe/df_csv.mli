@@ -15,7 +15,10 @@ val read
   -> [ `unfiltered ] Df.t Or_error.t
 
 (** Similar to [read_exn] but raises exception on errors. *)
-val read_exn : string -> [ `unfiltered ] Df.t
+val read_exn
+  :  ?columns:(string * Array_intf.packed) list
+  -> string
+  -> [ `unfiltered ] Df.t
 
 (** [write df filename] writes dataframe [df] in CSV format. *)
 val write : _ Df.t -> string -> unit Or_error.t

@@ -69,7 +69,7 @@ let read ?columns filename =
   let%bind columns = Or_error.all columns in
   Df.create columns
 
-let read_exn filename = Or_error.ok_exn (read filename)
+let read_exn ?columns filename = Or_error.ok_exn (read ?columns filename)
 
 let write_exn (type a) (t : a Df.t) filename =
   Df.named_columns t
