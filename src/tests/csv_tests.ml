@@ -55,10 +55,7 @@ let%expect_test _ =
   let df = build_df () in
   Csv.write_exn df csv_filename;
   let df =
-    Csv.read_exn
-      ~columns:
-        [ col_i, Array_intf.P Native_array.int; col_sin, Array_intf.P Native_array.float ]
-      csv_filename
+    Csv.read_exn ~columns:Native_array.[ col_i, pint; col_sin, pfloat ] csv_filename
   in
   let slice_df =
     Df.filter

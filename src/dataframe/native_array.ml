@@ -122,3 +122,7 @@ let float =
 
 let string =
   (module String : Array_intf.S with type Elt.t = string and type t = string array)
+
+let pint = Array_intf.P int
+let pfloat = Array_intf.P float
+let pstring = Array_intf.P string
