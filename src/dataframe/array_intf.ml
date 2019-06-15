@@ -30,3 +30,4 @@ module type S = sig
 end
 
 type ('a, 'b) t = (module S with type Elt.t = 'a and type t = 'b)
+type packed = P : (_, _) t -> packed

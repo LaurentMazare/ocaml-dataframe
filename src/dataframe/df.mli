@@ -1,7 +1,5 @@
 (* TODO: add [cast].
    TODO: maybe add [join] ?
-   TODO: handle explicit headers in [Csv.read] ?
-   TODO: automatic cast for [Csv.read].
 *)
 open Base
 
@@ -93,14 +91,6 @@ val filter_columns_exn : 'a t -> names:string list -> 'a t
 val to_string : ?headers_only:bool -> _ t -> string
 val to_aligned_rows : _ t -> string list
 val print : ?out_channel:Stdio.Out_channel.t -> _ t -> unit
-
-(** {3 CSV Reading and Writing } *)
-module Csv : sig
-  val read : string -> [ `unfiltered ] t Or_error.t
-  val read_exn : string -> [ `unfiltered ] t
-  val write : _ t -> string -> unit Or_error.t
-  val write_exn : _ t -> string -> unit
-end
 
 (** {3 Mapping and Filtering } *)
 
@@ -201,3 +191,7 @@ module Int : sig
   val min : _ t -> name:string -> int option
   val max : _ t -> name:string -> int option
 end
+
+(** {3 Misc } *)
+
+val filter_ : 'a t -> 'a Filter.t
