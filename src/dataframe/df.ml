@@ -45,7 +45,12 @@ let iter_row (type a) (t : a t) ~f =
   | Filter filter -> Bool_array.iteri filter ~f:(fun i b -> if b then f i)
 
 let get_column t column_name = Map.find t.columns column_name
-let get_column_exn t column_name = Option.value_exn (get_column t column_name)
+
+let get_column_exn t column_name =
+  match get_column t column_name with
+  | None -> Printf.failwithf "cannot find column %s" column_name ()
+  | Some column -> column
+
 let column_names t = Map.keys t.columns
 let named_columns t = Map.to_alist t.columns
 let filter_ t = t.filter
@@ -190,7 +195,19 @@ module R = struct
   *)
   let column : type a b. (a, b) Array_intf.t -> string -> a t =
    fun mod_ name (P df) ->
-    let column = Column.extract_exn (get_column_exn df name) mod_ in
+    let column =
+      let column = get_column_exn df name in
+      match Column.extract column mod_ with
+      | Some column -> column
+      | None ->
+        let (module M) = mod_ in
+        Printf.failwithf
+          "type mismatch for column %s (expected %s got %s)"
+          name
+          M.Elt.name
+          (Column.packed_elt_name column)
+          ()
+    in
     Staged.stage (fun ~index -> Column.get column index)
 
   let int = column Native_array.int

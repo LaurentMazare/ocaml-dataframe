@@ -110,7 +110,7 @@ end)
 module String = Make (struct
   include String
 
-  let name = "float"
+  let name = "string"
   let to_string = Fn.id
   let of_string s = Some s
 end)

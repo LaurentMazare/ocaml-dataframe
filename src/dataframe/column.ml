@@ -45,7 +45,10 @@ let extract : type a b. packed -> (a, b) Array_intf.t -> (a, b) t option =
   | None -> None
 
 let extract_exn : type a b. packed -> (a, b) Array_intf.t -> (a, b) t =
- fun t m -> Option.value_exn (extract t m)
+ fun t m ->
+  match extract t m with
+  | Some v -> v
+  | None -> failwith "type mismatch"
 
 let length : type a b. (a, b) t -> int =
  fun t ->

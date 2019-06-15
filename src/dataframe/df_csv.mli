@@ -1,4 +1,4 @@
-(* TODO: automatic cast for [Csv.read].
+(* TODO: automatic cast for [read] ?
 *)
 open Base
 
