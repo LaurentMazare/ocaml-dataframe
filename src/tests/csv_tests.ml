@@ -6,7 +6,7 @@ let col_i = "col-indexes"
 let col_i2 = "col-i2"
 let col_sin = "col-sin"
 let col_sin_str = "col-sin-str"
-let csv_filename = "test.csv"
+let csv_filename = Caml.Filename.temp_file "test" ".csv"
 
 let build_df () =
   let indexes = Array.init 500 ~f:Fn.id in
