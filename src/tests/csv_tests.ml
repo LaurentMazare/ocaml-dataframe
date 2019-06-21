@@ -1,6 +1,6 @@
 open Base
 open Dataframe
-open! Df.R.Let_syntax
+open Df.R.Let_syntax
 
 let col_i = "col-indexes"
 let col_i2 = "col-i2"
