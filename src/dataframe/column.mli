@@ -93,3 +93,5 @@ val packed_elt_name : packed -> string
 val packed_to_string : ?max_rows:int -> ?filter:Bool_array.t -> packed -> string
 val packed_get_string : packed -> int -> string
 val packed_select : packed -> indexes:int array -> packed
+
+val map : ('a, 'b) t -> ('c, 'd) Array_intf.t -> f:('a -> 'c) -> ('c, 'd) t

@@ -269,6 +269,31 @@ let add_column_exn t ~name column = add_column t ~name column |> Or_error.ok_exn
 let map_and_add_column t ~name mod_ f = add_column t ~name (map t mod_ f)
 let map_and_add_column_exn t ~name mod_ f = add_column_exn t ~name (map t mod_ f)
 
+let map_one: type a b c d.
+     _ t
+  -> name:string
+  -> src:(c, d) Array_intf.t
+  -> dst:(a, b) Array_intf.t
+  -> f:(c -> a)
+  -> (a, b) Column.t
+  = fun t ~name ~src ~dst ~f ->
+  let (P column) = get_column_exn t name in
+  let (module M) = Column.mod_ column in
+  let (module M') = src in
+  let (module M_dst) = dst in
+  match Type_equal.Id.same_witness M.type_id M'.type_id with
+  | Some T ->
+      Array.init (Column.length column) ~f:(fun i -> Column.get column i |> f)
+      |> M_dst.of_array
+      |> Column.of_data dst
+  | None ->
+      Printf.failwithf
+        "type mismatch for column %s (expected %s got %s)"
+        name
+        M.Elt.name
+        M'.Elt.name
+        ()
+
 let sort (type a) (t : a t) f ~compare =
   let indexes =
     let f = Staged.unstage (f (P t)) in

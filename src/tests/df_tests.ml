@@ -267,5 +267,23 @@ let%expect_test _ =
          1.          1.
          8.          8.
          2.          2.
-        |}]
+        |}];
+      let column =
+        Df.map_one df
+          ~name:col_e1
+          ~src:Native_array.float
+          ~dst:Native_array.string
+          ~f:(Printf.sprintf "%.2f")
+      in
+      Column.to_string column |> Stdio.printf "%s\n%!";
+      [%expect {|
+        0 2.00
+        1 7.00
+        2 1.00
+        3 8.00
+        4 2.00
+        5 8.00
+        6 1.00
+        7 8.00
+        8 2.00 |}]
   )

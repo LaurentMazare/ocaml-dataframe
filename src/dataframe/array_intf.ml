@@ -15,6 +15,7 @@ end
 (* Arrays could be based on different storage types, e.g.
    array, bigarray, ...
 *)
+(* TODO: add [init] ? *)
 module type S = sig
   type t
 

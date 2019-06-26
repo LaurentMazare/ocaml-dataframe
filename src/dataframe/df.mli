@@ -133,6 +133,15 @@ val filter : _ t -> bool R.t -> [ `filtered ] t
 *)
 val map : _ t -> ('a, 'b) Array_intf.t -> 'a R.t ->  ('a, 'b) Column.t
 
+(** Similar to [map] but using a single column only. *)
+val map_one
+  :  _ t
+  -> name:string
+  -> src:('c, _) Array_intf.t
+  -> dst:('a, 'b) Array_intf.t
+  -> f:('c -> 'a)
+  -> ('a, 'b) Column.t
+
 (** [map_and_column ?only_filtered t ~name f] returns a dataframe similar
     to [t] but also adding a column [name] which values are obtained by
     applying [f] to each row in [t].

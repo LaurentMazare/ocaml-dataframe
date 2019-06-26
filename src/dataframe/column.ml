@@ -110,6 +110,12 @@ let select (type a b) (t : (a, b) t) ~indexes =
     Array.iteri indexes ~f:(fun i index -> M.set data i (M.get t.data index));
     { mod_ = t.mod_; data })
 
+let map : type a b c d. (a, b) t -> (c, d) Array_intf.t -> f:(a -> c) -> (c, d) t =
+  fun t (module M) ~f ->
+    Array.init (length t) ~f:(fun i -> get t i |> f)
+    |> M.of_array
+    |> of_data (module M)
+
 let fold (type a b) (t : (a, b) t) ~init ~f =
   let (module M) = t.mod_ in
   let acc = ref init in
@@ -144,3 +150,4 @@ let packed_elt_name (P t) = elt_name t
 let packed_to_string ?max_rows ?filter (P t) = to_string ?max_rows ?filter t
 let packed_get_string (P t) i = get_string t i
 let packed_select (P t) ~indexes = P (select t ~indexes)
+
