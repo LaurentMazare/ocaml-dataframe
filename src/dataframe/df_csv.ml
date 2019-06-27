@@ -1,5 +1,20 @@
 open Base
 
+let transpose_rows_to_cols = function
+  | [] -> failwith "cannot transpose an empty matrix"
+  | header :: _ as rows ->
+    let header_length = List.length header in
+    let rows =
+      List.map rows ~f:(fun row ->
+          let row_length = List.length row in
+          if row_length > header_length
+          then failwith "row has more elements than header"
+          else if row_length = header_length
+          then row
+          else row @ List.init (header_length - row_length) ~f:(fun _ -> ""))
+    in
+    Option.value_exn (List.transpose rows)
+
 let read ?columns filename =
   let open Or_error.Let_syntax in
   let%bind csv = Or_error.try_with (fun () -> Csv.load filename) in
@@ -12,7 +27,7 @@ let read ?columns filename =
   let%bind () =
     if lines > 0 then Ok () else Or_error.errorf "no rows in csv file %s" filename
   in
-  let csv = Csv.transpose csv in
+  let csv = transpose_rows_to_cols csv in
   let%bind columns =
     match columns with
     | None ->
@@ -84,7 +99,8 @@ let write_exn (type a) (t : a Df.t) filename =
              |> Array.to_list
          in
          header :: column)
-  |> Csv.transpose
+  |> List.transpose
+  |> Option.value_exn
   |> Csv.save filename
 
 let write t filename = Or_error.try_with (fun () -> write_exn t filename)
