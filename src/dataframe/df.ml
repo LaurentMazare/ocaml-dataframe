@@ -129,7 +129,8 @@ let to_aligned_rows (type a) (t : a t) =
       |> String.concat_array)
 
 let print ?(out_channel = Stdio.Out_channel.stdout) (type a) (t : a t) =
-  Stdio.Out_channel.output_lines out_channel (to_aligned_rows t)
+  Stdio.Out_channel.output_lines out_channel (to_aligned_rows t);
+  Stdio.Out_channel.flush out_channel
 
 let copy (type a) (t : a t) =
   let filter, len =
