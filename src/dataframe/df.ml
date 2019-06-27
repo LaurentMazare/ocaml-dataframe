@@ -262,6 +262,14 @@ let map : type a b c. c t -> (a, b) Array_intf.t -> a R.t -> (a, b) Column.t =
     | None -> Column.of_array mod_ [||]
     | Some data -> Column.of_data mod_ data)
 
+let iter : type a. a t -> unit R.t -> unit =
+ fun t f ->
+  if length t = 0
+  then ()
+  else (
+    let f = Staged.unstage (f (P t)) in
+    iter_row t ~f:(fun index -> f ~index))
+
 let add_column t ~name column =
   match t.filter with
   | No_filter len ->

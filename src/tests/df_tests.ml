@@ -143,6 +143,16 @@ let%expect_test _ =
 
 let%expect_test _ =
   with_df ~f:(fun df ->
+      Df.iter
+        df
+        [%map_open
+          let pi = Df.R.int col_pi in
+          Stdio.printf "%d " pi];
+      Stdio.printf "\n%!";
+      [%expect {| 3 1 4 1 5 9 2 6 5 |}])
+
+let%expect_test _ =
+  with_df ~f:(fun df ->
       let grouped = Df.group df (Df.R.int col_pi) in
       let grouped = List.sort grouped ~compare:Caml.compare in
       List.iter grouped ~f:(fun (key, df) ->
@@ -269,14 +279,16 @@ let%expect_test _ =
          2.          2.
         |}];
       let column =
-        Df.map_one df
+        Df.map_one
+          df
           ~name:col_e1
           ~src:Native_array.float
           ~dst:Native_array.string
           ~f:(Printf.sprintf "%.2f")
       in
       Column.to_string column |> Stdio.printf "%s\n%!";
-      [%expect {|
+      [%expect
+        {|
         0 2.00
         1 7.00
         2 1.00

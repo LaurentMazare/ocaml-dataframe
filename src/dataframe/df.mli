@@ -152,6 +152,10 @@ val map_and_add_column
 val map_and_add_column_exn
  : [ `unfiltered] t -> name:string -> ('a, 'b) Array_intf.t -> 'a R.t -> [ `unfiltered ] t
 
+(** [iter t f] applies [f] to all the rows in [t] in order. *)
+val iter : _ t -> unit R.t ->  unit
+
+
 (** [fold t ~init ~f] folds over filtered rows of [t] in order.
 *)
 val fold : _ t -> init:'a -> f:('a -> 'a) R.t -> 'a
