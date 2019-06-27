@@ -100,7 +100,7 @@ let write_exn (type a) (t : a Df.t) filename =
          in
          header :: column)
   |> List.transpose
-  |> Option.value_exn
+  |> (fun v -> Option.value_exn v)
   |> Csv.save filename
 
 let write t filename = Or_error.try_with (fun () -> write_exn t filename)
