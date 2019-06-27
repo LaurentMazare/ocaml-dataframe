@@ -94,7 +94,7 @@ let unfiltered_length (type a) (t : a t) =
 let num_rows = length
 let num_cols t = Map.length t.columns
 
-let to_aligned_rows (type a) (t : a t) =
+let to_aligned_rows ?max_length (type a) (t : a t) =
   let named_columns = named_columns t |> Array.of_list in
   let max_len_per_column =
     Array.map named_columns ~f:(fun (name, _) -> String.length name)
@@ -111,11 +111,18 @@ let to_aligned_rows (type a) (t : a t) =
         max_len_per_column.(i) <- max max_len_per_column.(i) (String.length str);
         str)
   in
+  let target_length l =
+    match max_length with
+    | None -> l
+    | Some max_length -> Int.min l max_length
+  in
   let rows =
     match t.filter with
-    | No_filter len -> List.init len ~f:(fun index -> row ~index)
+    | No_filter len -> List.init (target_length len) ~f:(fun index -> row ~index)
     | Filter filter ->
-      List.init (Bool_array.length filter) ~f:(fun index ->
+      List.init
+        (Bool_array.length filter |> target_length)
+        ~f:(fun index ->
           if Bool_array.get filter index then row ~index |> Option.some else None)
       |> List.filter_opt
   in
@@ -128,8 +135,8 @@ let to_aligned_rows (type a) (t : a t) =
           String.make pad ' ' ^ cell)
       |> String.concat_array)
 
-let print ?(out_channel = Stdio.Out_channel.stdout) (type a) (t : a t) =
-  Stdio.Out_channel.output_lines out_channel (to_aligned_rows t);
+let print ?(out_channel = Stdio.Out_channel.stdout) ?max_length (type a) (t : a t) =
+  Stdio.Out_channel.output_lines out_channel (to_aligned_rows ?max_length t);
   Stdio.Out_channel.flush out_channel
 
 let copy (type a) (t : a t) =
@@ -270,30 +277,31 @@ let add_column_exn t ~name column = add_column t ~name column |> Or_error.ok_exn
 let map_and_add_column t ~name mod_ f = add_column t ~name (map t mod_ f)
 let map_and_add_column_exn t ~name mod_ f = add_column_exn t ~name (map t mod_ f)
 
-let map_one: type a b c d.
-     _ t
-  -> name:string
-  -> src:(c, d) Array_intf.t
-  -> dst:(a, b) Array_intf.t
-  -> f:(c -> a)
-  -> (a, b) Column.t
-  = fun t ~name ~src ~dst ~f ->
+let map_one : type a b c d.
+    _ t
+    -> name:string
+    -> src:(c, d) Array_intf.t
+    -> dst:(a, b) Array_intf.t
+    -> f:(c -> a)
+    -> (a, b) Column.t
+  =
+ fun t ~name ~src ~dst ~f ->
   let (P column) = get_column_exn t name in
   let (module M) = Column.mod_ column in
   let (module M') = src in
   let (module M_dst) = dst in
   match Type_equal.Id.same_witness M.type_id M'.type_id with
   | Some T ->
-      Array.init (Column.length column) ~f:(fun i -> Column.get column i |> f)
-      |> M_dst.of_array
-      |> Column.of_data dst
+    Array.init (Column.length column) ~f:(fun i -> Column.get column i |> f)
+    |> M_dst.of_array
+    |> Column.of_data dst
   | None ->
-      Printf.failwithf
-        "type mismatch for column %s (expected %s got %s)"
-        name
-        M.Elt.name
-        M'.Elt.name
-        ()
+    Printf.failwithf
+      "type mismatch for column %s (expected %s got %s)"
+      name
+      M.Elt.name
+      M'.Elt.name
+      ()
 
 let sort (type a) (t : a t) f ~compare =
   let indexes =

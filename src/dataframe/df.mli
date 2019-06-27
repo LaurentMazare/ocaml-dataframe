@@ -89,8 +89,8 @@ val filter_columns_exn : 'a t -> names:string list -> 'a t
 
 (** {3 Pretty Printing } *)
 val to_string : ?headers_only:bool -> _ t -> string
-val to_aligned_rows : _ t -> string list
-val print : ?out_channel:Stdio.Out_channel.t -> _ t -> unit
+val to_aligned_rows : ?max_length:int -> _ t -> string list
+val print : ?out_channel:Stdio.Out_channel.t -> ?max_length:int -> _ t -> unit
 
 (** {3 Mapping and Filtering } *)
 
