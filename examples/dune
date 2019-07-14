@@ -1,5 +1,6 @@
 (executables
   (names basics)
   (libraries base dataframe stdio)
+  (flags :standard -w -66)
   (preprocess (pps ppx_let))
   )

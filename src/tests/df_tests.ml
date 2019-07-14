@@ -45,8 +45,7 @@ let%expect_test _ =
     --- --- -----------
      7.   1          7.
      8.   1          8.
-    |}]
-  )
+    |}])
 
 let%expect_test _ =
   with_df ~f:(fun df ->
@@ -108,8 +107,7 @@ let%expect_test _ =
      2.   5          2.
      8.   6          8.
      8.   9          8.
-    |}]
-  )
+    |}])
 
 let%expect_test _ =
   with_df ~f:(fun df ->
@@ -138,8 +136,7 @@ let%expect_test _ =
      1.        3.   2          1.
      8.       70.   6          8.
      2.        9.   5          2.
-    |}]
-  )
+    |}])
 
 let%expect_test _ =
   with_df ~f:(fun df ->
@@ -229,8 +226,7 @@ let%expect_test _ =
       8.   9          8.
       1.   2          1.
       2.   5          2.
-  |}]
-  )
+  |}])
 
 let%expect_test _ =
   with_df ~f:(fun df ->
@@ -297,5 +293,31 @@ let%expect_test _ =
         5 8.00
         6 1.00
         7 8.00
-        8 2.00 |}]
-  )
+        8 2.00 |}])
+
+let%expect_test _ =
+  let str_column =
+    Column.of_string_array [| "one"; "two"; "three"; "four"; "two"; "two"; "four" |]
+  in
+  let const_column = Column.create_int 42 ~len:(Column.length str_column) in
+  let df = Df.create_exn [ "s", P str_column; "i", P const_column ] in
+  Df.print df;
+  [%expect
+    {|
+    --- ------
+      i      s
+    --- ------
+     42    one
+     42    two
+     42  three
+     42   four
+     42    two
+     42    two
+     42   four |}];
+  let value_counts = Df.String.value_counts df ~name:"s" in
+  Map.iteri value_counts ~f:(fun ~key ~data -> Stdio.printf "%s: %d\n%!" key data);
+  [%expect {|
+    four: 2
+    one: 1
+    three: 1
+    two: 3 |}]

@@ -20,6 +20,13 @@ let of_array : type a b. (a, b) Array_intf.t -> a array -> (a, b) t =
   let (module M) = mod_ in
   of_data mod_ (M.of_array vs)
 
+let create_int = create Native_array.int
+let create_float = create Native_array.float
+let create_string = create Native_array.string
+let of_int_array = of_array Native_array.int
+let of_float_array = of_array Native_array.float
+let of_string_array = of_array Native_array.string
+
 let copy : type a b. ?filter:Bool_array.t -> (a, b) t -> (a, b) t =
  fun ?filter t ->
   let (module M) = t.mod_ in
@@ -111,10 +118,8 @@ let select (type a b) (t : (a, b) t) ~indexes =
     { mod_ = t.mod_; data })
 
 let map : type a b c d. (a, b) t -> (c, d) Array_intf.t -> f:(a -> c) -> (c, d) t =
-  fun t (module M) ~f ->
-    Array.init (length t) ~f:(fun i -> get t i |> f)
-    |> M.of_array
-    |> of_data (module M)
+ fun t (module M) ~f ->
+  Array.init (length t) ~f:(fun i -> get t i |> f) |> M.of_array |> of_data (module M)
 
 let fold (type a b) (t : (a, b) t) ~init ~f =
   let (module M) = t.mod_ in
@@ -150,4 +155,3 @@ let packed_elt_name (P t) = elt_name t
 let packed_to_string ?max_rows ?filter (P t) = to_string ?max_rows ?filter t
 let packed_get_string (P t) i = get_string t i
 let packed_select (P t) ~indexes = P (select t ~indexes)
-

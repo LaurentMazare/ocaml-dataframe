@@ -285,13 +285,14 @@ let add_column_exn t ~name column = add_column t ~name column |> Or_error.ok_exn
 let map_and_add_column t ~name mod_ f = add_column t ~name (map t mod_ f)
 let map_and_add_column_exn t ~name mod_ f = add_column_exn t ~name (map t mod_ f)
 
-let map_one : type a b c d.
-    _ t
-    -> name:string
-    -> src:(c, d) Array_intf.t
-    -> dst:(a, b) Array_intf.t
-    -> f:(c -> a)
-    -> (a, b) Column.t
+let map_one
+    : type a b c d.
+      _ t
+      -> name:string
+      -> src:(c, d) Array_intf.t
+      -> dst:(a, b) Array_intf.t
+      -> f:(c -> a)
+      -> (a, b) Column.t
   =
  fun t ~name ~src ~dst ~f ->
   let (P column) = get_column_exn t name in
@@ -317,7 +318,8 @@ let sort (type a) (t : a t) f ~compare =
     match t.filter with
     | No_filter len -> Array.init len ~f:(fun index -> f ~index, index)
     | Filter filter ->
-      Bool_array.indexes filter ~value:true |> Array.map ~f:(fun index -> f ~index, index)
+      Bool_array.indexes filter ~value:true
+      |> Array.map ~f:(fun index -> f ~index, index)
   in
   Array.sort indexes ~compare:(fun (a1, _) (a2, _) -> compare a1 a2);
   let indexes = Array.map indexes ~f:snd in
@@ -369,6 +371,10 @@ let reduce (type a) (t : a t) row_f ~f =
       acc := v);
   !acc
 
+let incr = function
+  | None -> Some 1
+  | Some v -> Some (v + 1)
+
 (* TODO: the [Float_] and [Int_] modules are very similar, use a functor
    instead ([M.Elt] contains the [compare] function needed for [min] and
    [max] ?
@@ -389,6 +395,14 @@ module Float_ = struct
 
   let min (type a) (t : a t) ~name = reduce t (R.float name) ~f:Float.min
   let max (type a) (t : a t) ~name = reduce t (R.float name) ~f:Float.max
+
+  let value_counts (type a) (t : a t) ~name =
+    let f =
+      [%map_open
+        let v = R.float name in
+        fun acc -> Map.change acc v ~f:incr]
+    in
+    fold t ~init:(Map.empty (module Float)) ~f
 end
 
 module Int_ = struct
@@ -407,7 +421,29 @@ module Int_ = struct
 
   let min (type a) (t : a t) ~name = reduce t (R.int name) ~f:Int.min
   let max (type a) (t : a t) ~name = reduce t (R.int name) ~f:Int.max
+
+  let value_counts (type a) (t : a t) ~name =
+    let f =
+      [%map_open
+        let v = R.int name in
+        fun acc -> Map.change acc v ~f:incr]
+    in
+    fold t ~init:(Map.empty (module Int)) ~f
+end
+
+module String_ = struct
+  let min (type a) (t : a t) ~name = reduce t (R.string name) ~f:String.min
+  let max (type a) (t : a t) ~name = reduce t (R.string name) ~f:String.max
+
+  let value_counts (type a) (t : a t) ~name =
+    let f =
+      [%map_open
+        let v = R.string name in
+        fun acc -> Map.change acc v ~f:incr]
+    in
+    fold t ~init:(Map.empty (module String)) ~f
 end
 
 module Float = Float_
 module Int = Int_
+module String = String_

@@ -196,6 +196,7 @@ module Float : sig
   val mean : _ t -> name:string -> float option
   val min : _ t -> name:string -> float option
   val max : _ t -> name:string -> float option
+  val value_counts : _ t -> name:string -> (float, int, Float.comparator_witness) Map.t
 end
 
 module Int : sig
@@ -203,6 +204,13 @@ module Int : sig
   val mean : _ t -> name:string -> float option
   val min : _ t -> name:string -> int option
   val max : _ t -> name:string -> int option
+  val value_counts : _ t -> name:string -> (int, int, Int.comparator_witness) Map.t
+end
+
+module String : sig
+  val min : _ t -> name:string -> string option
+  val max : _ t -> name:string -> string option
+  val value_counts : _ t -> name:string -> (string, int, String.comparator_witness) Map.t
 end
 
 (** {3 Misc } *)

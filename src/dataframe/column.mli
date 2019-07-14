@@ -11,6 +11,18 @@ type ('elt, 'storage) t
 *)
 val create : ('a, 'b) Array_intf.t -> 'a -> len:int -> ('a, 'b) t
 
+(** [create_int i ~len] creates a new column of length [len] set to [i].
+*)
+val create_int : int -> len:int -> (int, int array) t
+
+(** [create_float f ~len] creates a new column of length [len] set to [f].
+*)
+val create_float : float -> len:int -> (float, float array) t
+
+(** [create_string s ~len] creates a new column of length [len] set to [s].
+*)
+val create_string : string -> len:int -> (string, string array) t
+
 (** [of_data array_intf data] returns a new column using [data] as
     storage.
 *)
@@ -20,6 +32,15 @@ val of_data : ('a, 'b) Array_intf.t -> 'b -> ('a, 'b) t
     [array]. This column is backed by a storage defined in [array_intf].
 *)
 val of_array : ('a, 'b) Array_intf.t -> 'a array -> ('a, 'b) t
+
+(** [of_int_array array] creates a new column backed by [array]. *)
+val of_int_array : int array -> (int, int array) t
+
+(** [of_float_array array] creates a new column backed by [array]. *)
+val of_float_array : float array -> (float, float array) t
+
+(** [of_string_array array] creates a new column backed by [array]. *)
+val of_string_array : string array -> (string, string array) t
 
 (** [copy ?filter t] returns a new column obtained by copying [t].
     If [filter] is provided only elements that match [filter] are
@@ -93,5 +114,4 @@ val packed_elt_name : packed -> string
 val packed_to_string : ?max_rows:int -> ?filter:Bool_array.t -> packed -> string
 val packed_get_string : packed -> int -> string
 val packed_select : packed -> indexes:int array -> packed
-
 val map : ('a, 'b) t -> ('c, 'd) Array_intf.t -> f:('a -> 'c) -> ('c, 'd) t
