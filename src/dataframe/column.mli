@@ -11,6 +11,12 @@ type ('elt, 'storage) t
 *)
 val create : ('a, 'b) Array_intf.t -> 'a -> len:int -> ('a, 'b) t
 
+(** [init array_intf len ~f] creates a new column of length [len] using
+    the storage described in [Array_intf]. Elements are initialized
+    to [f i] where [i] is their 0 based index.
+*)
+val init : ('a, 'b) Array_intf.t -> int -> f:(int -> 'a) -> ('a, 'b) t
+
 (** [create_int i ~len] creates a new column of length [len] set to [i].
 *)
 val create_int : int -> len:int -> (int, int array) t
@@ -48,6 +54,15 @@ val of_string_array : string array -> (string, string array) t
     than [t].
 *)
 val copy : ?filter:Bool_array.t -> ('a, 'b) t -> ('a, 'b) t
+
+(** [concat array_intf filter_and_columns] concatenate the values from
+    [filter_and_columns] according to some filters.
+    If no filter is provided, all the values are copied.
+*)
+val concat
+  :  ('a, 'b) Array_intf.t
+  -> (Bool_array.t option * ('a, 'b) t) list
+  -> ('a, 'b) t
 
 (** [select t ~indexes] returns a new column using the same storage as
     [t]. The elements of this new column are obtained by taking values

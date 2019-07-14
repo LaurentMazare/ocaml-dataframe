@@ -97,6 +97,14 @@ val of_rows4_exn
 *)
 val copy : _ t -> [`unfiltered ] t
 
+(** [concat ts] returns the concatenation of all dataframes in [ts].
+    This returns an error if the dataframes in [ts] don't all have
+    the same column names and types.
+*)
+val concat : _ t list -> [`unfiltered ] t Or_error.t
+
+val concat_exn : _ t list -> [ `unfiltered ] t
+
 (** {3 Column Operations} *)
 
 (** [get_column t column_name] returns the column of [t] which name matches
@@ -272,3 +280,5 @@ end
 (** {3 Misc } *)
 
 val filter_ : 'a t -> 'a Filter.t
+
+val to_filtered : _ t -> [ `filtered ] t

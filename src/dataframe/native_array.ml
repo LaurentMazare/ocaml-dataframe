@@ -7,6 +7,7 @@ module Make (E : Array_intf.Elt) :
   module Elt = E
 
   let create v ~len = Array.create v ~len
+  let init = Array.init
   let of_array = Fn.id
 
   let copy ?filter t =
@@ -57,6 +58,7 @@ module MakeOption (E : Array_intf.Elt) :
   end
 
   let create v ~len = Option_array.init len ~f:(Fn.const v)
+  let init = Option_array.init
   let of_array vs = Option_array.init (Array.length vs) ~f:(fun i -> vs.(i))
 
   let copy ?filter t =

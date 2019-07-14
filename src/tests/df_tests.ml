@@ -315,7 +315,8 @@ let%expect_test _ =
     |> Df.of_rows2_exn ("value", N.string) ("cnt", N.int)
   in
   Df.print value_counts;
-  [%expect {|
+  [%expect
+    {|
     ---- ------
      cnt  value
     ---- ------
@@ -323,3 +324,32 @@ let%expect_test _ =
        1    one
        1  three
        3    two |}]
+
+let%expect_test _ =
+  with_df ~f:(fun df ->
+      let df2 =
+        Df.filter
+          df
+          [%map_open
+            let pi = Df.R.int col_pi in
+            pi = 1]
+      in
+      let df = Df.concat_exn [ df2; Df.to_filtered df; df2 ] in
+      Df.print df;
+      [%expect {|
+        --- --- -----------
+          e  pi  sum_n 1/n!
+        --- --- -----------
+         7.   1          7.
+         8.   1          8.
+         2.   3          2.
+         7.   1          7.
+         1.   4          1.
+         8.   1          8.
+         2.   5          2.
+         8.   9          8.
+         1.   2          1.
+         8.   6          8.
+         2.   5          2.
+         7.   1          7.
+         8.   1          8. |}])

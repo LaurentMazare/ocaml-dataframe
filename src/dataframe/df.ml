@@ -36,35 +36,35 @@ let create named_columns =
 
 let create_exn columns = create columns |> Or_error.ok_exn
 
-let of_rows1 (name1, intf1) elements =
-  let column = Column.of_array intf1 (Array.of_list elements) in
+let of_rows1 (name1, mod1) elements =
+  let column = Column.of_array mod1 (Array.of_list elements) in
   create [ name1, P column ]
 
 let of_rows1_exn col1 elements = of_rows1 col1 elements |> Or_error.ok_exn
 
-let of_rows2 (n1, intf1) (n2, intf2) elements =
-  let get intf ~f = Column.P (Column.of_array intf (Array.of_list_map elements ~f)) in
-  create [ n1, get intf1 ~f:fst; n2, get intf2 ~f:snd ]
+let of_rows2 (n1, mod1) (n2, mod2) elements =
+  let get mod_ ~f = Column.P (Column.of_array mod_ (Array.of_list_map elements ~f)) in
+  create [ n1, get mod1 ~f:fst; n2, get mod2 ~f:snd ]
 
 let of_rows2_exn c1 c2 elements = of_rows2 c1 c2 elements |> Or_error.ok_exn
 
-let of_rows3 (n1, intf1) (n2, intf2) (n3, intf3) elements =
-  let get intf ~f = Column.P (Column.of_array intf (Array.of_list_map elements ~f)) in
+let of_rows3 (n1, mod1) (n2, mod2) (n3, mod3) elements =
+  let get mod_ ~f = Column.P (Column.of_array mod_ (Array.of_list_map elements ~f)) in
   create
-    [ n1, get intf1 ~f:(fun (e1, _, _) -> e1)
-    ; n2, get intf2 ~f:(fun (_, e2, _) -> e2)
-    ; n3, get intf3 ~f:(fun (_, _, e3) -> e3)
+    [ n1, get mod1 ~f:(fun (e1, _, _) -> e1)
+    ; n2, get mod2 ~f:(fun (_, e2, _) -> e2)
+    ; n3, get mod3 ~f:(fun (_, _, e3) -> e3)
     ]
 
 let of_rows3_exn c1 c2 c3 elements = of_rows3 c1 c2 c3 elements |> Or_error.ok_exn
 
-let of_rows4 (n1, intf1) (n2, intf2) (n3, intf3) (n4, intf4) elements =
-  let get intf ~f = Column.P (Column.of_array intf (Array.of_list_map elements ~f)) in
+let of_rows4 (n1, mod1) (n2, mod2) (n3, mod3) (n4, mod4) elements =
+  let get mod_ ~f = Column.P (Column.of_array mod_ (Array.of_list_map elements ~f)) in
   create
-    [ n1, get intf1 ~f:(fun (e1, _, _, _) -> e1)
-    ; n2, get intf2 ~f:(fun (_, e2, _, _) -> e2)
-    ; n3, get intf3 ~f:(fun (_, _, e3, _) -> e3)
-    ; n4, get intf4 ~f:(fun (_, _, _, e4) -> e4)
+    [ n1, get mod1 ~f:(fun (e1, _, _, _) -> e1)
+    ; n2, get mod2 ~f:(fun (_, e2, _, _) -> e2)
+    ; n3, get mod3 ~f:(fun (_, _, e3, _) -> e3)
+    ; n4, get mod4 ~f:(fun (_, _, _, e4) -> e4)
     ]
 
 let of_rows4_exn c1 c2 c3 c4 elements = of_rows4 c1 c2 c3 c4 elements |> Or_error.ok_exn
@@ -403,6 +403,85 @@ let reduce (type a) (t : a t) row_f ~f =
       in
       acc := v);
   !acc
+
+let concat ts =
+  match ts with
+  | [] -> Or_error.error_string "df.concat: empty input list"
+  | hd :: _ ->
+    let col_types =
+      Map.map hd.columns ~f:(fun (Column.P col) -> Array_intf.P (Column.mod_ col))
+    in
+    let col_types_list = Map.to_alist col_types in
+    let total_length = List.sum (module Int) ts ~f:length in
+    let errors =
+      List.filter_mapi ts ~f:(fun i t ->
+          let additional_keys =
+            Map.keys t.columns |> List.filter ~f:(fun n -> not (Map.mem col_types n))
+          in
+          match additional_keys with
+          | [] ->
+            let errors =
+              List.filter_map col_types_list ~f:(fun (name, Array_intf.P mod_) ->
+                  let (module M) = mod_ in
+                  match Map.find t.columns name with
+                  | None -> Printf.sprintf "missing column %s" name |> Option.some
+                  | Some (P col) ->
+                    let (module M') = Column.mod_ col in
+                    (match Type_equal.Id.same_witness M.type_id M'.type_id with
+                    | Some T -> None
+                    | None ->
+                      Printf.sprintf "different types for column %s" name |> Option.some))
+            in
+            (match errors with
+            | [] -> None
+            | errors ->
+              Printf.sprintf
+                "errors in dataframe %d: %s"
+                i
+                (String.concat errors ~sep:",")
+              |> Error.of_string
+              |> Option.some)
+          | columns ->
+            Printf.sprintf
+              "additional columns in dataframe %d: %s"
+              i
+              (String.concat columns ~sep:",")
+            |> Error.of_string
+            |> Option.some)
+    in
+    (match errors with
+    | [] ->
+      let columns =
+        Map.mapi col_types ~f:(fun ~key:name ~data:(Array_intf.P mod_) ->
+            let (module M) = mod_ in
+            let f : type a. a t -> Bool_array.t option * (M.Elt.t, M.t) Column.t =
+             fun t ->
+              let (Column.P column) = Map.find_exn t.columns name in
+              let (module M') = Column.mod_ column in
+              match Type_equal.Id.same_witness M.type_id M'.type_id with
+              | None -> assert false
+              | Some T ->
+                let filter =
+                  match t.filter with
+                  | Filter f -> Some f
+                  | No_filter _ -> None
+                in
+                filter, column
+            in
+            let columns = List.map ts ~f in
+            Column.P (Column.concat mod_ columns))
+      in
+      Ok { columns; filter = Filter.No_filter total_length }
+    | errors -> Error (Error.of_list errors))
+
+let concat_exn ts = concat ts |> Or_error.ok_exn
+
+let to_filtered : type a. a t -> [ `filtered ] t =
+ fun t ->
+  match t.filter with
+  | Filter _ -> t
+  | No_filter len ->
+    { columns = t.columns; filter = Filter (Bool_array.create true ~len) }
 
 let incr = function
   | None -> Some 1

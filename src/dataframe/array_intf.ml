@@ -15,13 +15,13 @@ end
 (* Arrays could be based on different storage types, e.g.
    array, bigarray, ...
 *)
-(* TODO: add [init] ? *)
 module type S = sig
   type t
 
   module Elt : Elt
 
   val create : Elt.t -> len:int -> t
+  val init : int -> f:(int -> Elt.t) -> t
   val copy : ?filter:Bool_array.t -> t -> t
   val of_array : Elt.t array -> t
   val length : t -> int

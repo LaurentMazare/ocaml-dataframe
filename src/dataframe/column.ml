@@ -15,6 +15,11 @@ let create : type a b. (a, b) Array_intf.t -> a -> len:int -> (a, b) t =
   let (module M) = mod_ in
   of_data mod_ (M.create v ~len)
 
+let init : type a b. (a, b) Array_intf.t -> int -> f:(int -> a) -> (a, b) t =
+ fun mod_ len ~f ->
+  let (module M) = mod_ in
+  of_data mod_ (M.init len ~f)
+
 let of_array : type a b. (a, b) Array_intf.t -> a array -> (a, b) t =
  fun mod_ vs ->
   let (module M) = mod_ in
@@ -31,6 +36,22 @@ let copy : type a b. ?filter:Bool_array.t -> (a, b) t -> (a, b) t =
  fun ?filter t ->
   let (module M) = t.mod_ in
   { mod_ = t.mod_; data = M.copy ?filter t.data }
+
+let concat
+    : type a b. (a, b) Array_intf.t -> (Bool_array.t option * (a, b) t) list -> (a, b) t
+  =
+ fun array_intf filter_and_ts ->
+  let (module M) = array_intf in
+  (* This should be made more efficient as there are no need to allocate
+      this whole list.
+   *)
+  List.map filter_and_ts ~f:(fun (filter, t) ->
+      match filter with
+      | None -> M.length t.data |> Array.init ~f:(fun i -> M.get t.data i)
+      | Some filter ->
+        Bool_array.indexes filter ~value:true |> Array.map ~f:(M.get t.data))
+  |> Array.concat
+  |> of_array array_intf
 
 let get : type a b. (a, b) t -> int -> a =
  fun t i ->
@@ -109,13 +130,8 @@ let to_string : type a b. ?max_rows:int -> ?filter:Bool_array.t -> (a, b) t -> s
 let select (type a b) (t : (a, b) t) ~indexes =
   let (module M) = t.mod_ in
   let length = Array.length indexes in
-  if length = 0
-  then { mod_ = t.mod_; data = M.of_array [||] }
-  else (
-    let v = M.get t.data indexes.(0) in
-    let data = M.create v ~len:length in
-    Array.iteri indexes ~f:(fun i index -> M.set data i (M.get t.data index));
-    { mod_ = t.mod_; data })
+  let data = M.init length ~f:(fun i -> M.get t.data indexes.(i)) in
+  { mod_ = t.mod_; data }
 
 let map : type a b c d. (a, b) t -> (c, d) Array_intf.t -> f:(a -> c) -> (c, d) t =
  fun t (module M) ~f ->
