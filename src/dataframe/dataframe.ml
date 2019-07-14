@@ -2,6 +2,7 @@ module Array_intf = Array_intf
 module Column = Column
 module Csv = Df_csv
 module Df = Df
+module N = Native_array
 module Native_array = Native_array
 
 module For_testing_only = struct

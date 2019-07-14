@@ -36,6 +36,39 @@ let create named_columns =
 
 let create_exn columns = create columns |> Or_error.ok_exn
 
+let of_rows1 (name1, intf1) elements =
+  let column = Column.of_array intf1 (Array.of_list elements) in
+  create [ name1, P column ]
+
+let of_rows1_exn col1 elements = of_rows1 col1 elements |> Or_error.ok_exn
+
+let of_rows2 (n1, intf1) (n2, intf2) elements =
+  let get intf ~f = Column.P (Column.of_array intf (Array.of_list_map elements ~f)) in
+  create [ n1, get intf1 ~f:fst; n2, get intf2 ~f:snd ]
+
+let of_rows2_exn c1 c2 elements = of_rows2 c1 c2 elements |> Or_error.ok_exn
+
+let of_rows3 (n1, intf1) (n2, intf2) (n3, intf3) elements =
+  let get intf ~f = Column.P (Column.of_array intf (Array.of_list_map elements ~f)) in
+  create
+    [ n1, get intf1 ~f:(fun (e1, _, _) -> e1)
+    ; n2, get intf2 ~f:(fun (_, e2, _) -> e2)
+    ; n3, get intf3 ~f:(fun (_, _, e3) -> e3)
+    ]
+
+let of_rows3_exn c1 c2 c3 elements = of_rows3 c1 c2 c3 elements |> Or_error.ok_exn
+
+let of_rows4 (n1, intf1) (n2, intf2) (n3, intf3) (n4, intf4) elements =
+  let get intf ~f = Column.P (Column.of_array intf (Array.of_list_map elements ~f)) in
+  create
+    [ n1, get intf1 ~f:(fun (e1, _, _, _) -> e1)
+    ; n2, get intf2 ~f:(fun (_, e2, _, _) -> e2)
+    ; n3, get intf3 ~f:(fun (_, _, e3, _) -> e3)
+    ; n4, get intf4 ~f:(fun (_, _, _, e4) -> e4)
+    ]
+
+let of_rows4_exn c1 c2 c3 c4 elements = of_rows4 c1 c2 c3 c4 elements |> Or_error.ok_exn
+
 let iter_row (type a) (t : a t) ~f =
   match t.filter with
   | No_filter len ->

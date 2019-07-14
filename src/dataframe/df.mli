@@ -35,6 +35,62 @@ val create : (string * Column.packed) list -> [ `unfiltered ] t Or_error.t
 *)
 val create_exn : (string * Column.packed) list -> [ `unfiltered ] t
 
+(** [of_rows1 (column_name, column_type) elements] creates a dataframe with
+    a single column based on [elements].
+*)
+val of_rows1 : (string * ('a, _) Array_intf.t) -> 'a list -> [ `unfiltered ] t Or_error.t
+
+(** [of_rows1_exn] is similar to [of_rows1] but raises an exception on errors.
+*)
+val of_rows1_exn : (string * ('a, _) Array_intf.t) -> 'a list -> [ `unfiltered ] t
+
+(** [of_rows2 (col_name1, col_type1) (col_name2, col_type2) elements]
+    creates a dataframe with a single column based on [elements].
+*)
+val of_rows2
+  :  (string * ('a, _) Array_intf.t)
+  -> (string * ('b, _) Array_intf.t)
+  -> ('a * 'b) list
+  -> [ `unfiltered ] t Or_error.t
+
+(** [of_rows2_exn] is similar to [of_rows2] but raises an exception on errors.
+*)
+val of_rows2_exn
+  :  (string * ('a, _) Array_intf.t)
+  -> (string * ('b, _) Array_intf.t)
+  -> ('a * 'b) list
+  -> [ `unfiltered ] t
+
+val of_rows3
+  :  (string * ('a, _) Array_intf.t)
+  -> (string * ('b, _) Array_intf.t)
+  -> (string * ('c, _) Array_intf.t)
+  -> ('a * 'b * 'c) list
+  -> [ `unfiltered ] t Or_error.t
+
+val of_rows3_exn
+  :  (string * ('a, _) Array_intf.t)
+  -> (string * ('b, _) Array_intf.t)
+  -> (string * ('c, _) Array_intf.t)
+  -> ('a * 'b * 'c) list
+  -> [ `unfiltered ] t
+
+val of_rows4
+  :  (string * ('a, _) Array_intf.t)
+  -> (string * ('b, _) Array_intf.t)
+  -> (string * ('c, _) Array_intf.t)
+  -> (string * ('d, _) Array_intf.t)
+  -> ('a * 'b * 'c * 'd) list
+  -> [ `unfiltered ] t Or_error.t
+
+val of_rows4_exn
+  :  (string * ('a, _) Array_intf.t)
+  -> (string * ('b, _) Array_intf.t)
+  -> (string * ('c, _) Array_intf.t)
+  -> (string * ('d, _) Array_intf.t)
+  -> ('a * 'b * 'c * 'd) list
+  -> [ `unfiltered ] t
+
 (** [copy t] returns a new dataframe where all the columns from [t]
     have been copied. Note that this is not a deep-copy: column elements
     are shared which may have some consequences if they are mutable.

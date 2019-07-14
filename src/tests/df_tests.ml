@@ -7,8 +7,8 @@ let col_e1 = "e"
 let col_e2 = "sum_n 1/n!"
 
 let with_df ~f =
-  let pi = Column.of_array Native_array.int [| 3; 1; 4; 1; 5; 9; 2; 6; 5 |] in
-  let e = Column.of_array Native_array.float [| 2.; 7.; 1.; 8.; 2.; 8.; 1.; 8.; 2. |] in
+  let pi = Column.of_array N.int [| 3; 1; 4; 1; 5; 9; 2; 6; 5 |] in
+  let e = Column.of_array N.float [| 2.; 7.; 1.; 8.; 2.; 8.; 1.; 8.; 2. |] in
   let df = Df.create_exn [ col_e1, P e; col_pi, P pi; col_e2, P e ] in
   f df
 
@@ -115,7 +115,7 @@ let%expect_test _ =
         Df.map_and_add_column_exn
           df
           ~name:"e^2 + pi"
-          Native_array.float
+          N.float
           [%map_open
             let pi = Df.R.int col_pi
             and e = Df.R.float col_e1 in
@@ -275,12 +275,7 @@ let%expect_test _ =
          2.          2.
         |}];
       let column =
-        Df.map_one
-          df
-          ~name:col_e1
-          ~src:Native_array.float
-          ~dst:Native_array.string
-          ~f:(Printf.sprintf "%.2f")
+        Df.map_one df ~name:col_e1 ~src:N.float ~dst:N.string ~f:(Printf.sprintf "%.2f")
       in
       Column.to_string column |> Stdio.printf "%s\n%!";
       [%expect
@@ -314,10 +309,17 @@ let%expect_test _ =
      42    two
      42    two
      42   four |}];
-  let value_counts = Df.String.value_counts df ~name:"s" in
-  Map.iteri value_counts ~f:(fun ~key ~data -> Stdio.printf "%s: %d\n%!" key data);
+  let value_counts =
+    Df.String.value_counts df ~name:"s"
+    |> Map.to_alist
+    |> Df.of_rows2_exn ("value", N.string) ("cnt", N.int)
+  in
+  Df.print value_counts;
   [%expect {|
-    four: 2
-    one: 1
-    three: 1
-    two: 3 |}]
+    ---- ------
+     cnt  value
+    ---- ------
+       2   four
+       1    one
+       1  three
+       3    two |}]

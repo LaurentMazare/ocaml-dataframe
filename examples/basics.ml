@@ -22,7 +22,7 @@ let () =
   let sum_df =
     Df.map
       filtered_df
-      Native_array.float
+      N.float
       [%map_open
         let pi = Df.R.int col_pi
         and e = Df.R.float col_e2 in
@@ -33,7 +33,7 @@ let () =
   let sum_df =
     Df.map
       df
-      Native_array.float
+      N.float
       Df.R.(map2 (int col_pi) (float col_e2) ~f:(fun pi e -> Float.of_int pi +. e))
   in
   Stdio.printf "> %d\n%!" (Df.length df);
