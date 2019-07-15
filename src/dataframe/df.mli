@@ -21,7 +21,6 @@ val num_rows : _ t -> int
 (** [num_cols t] returns the number of columns in t. *)
 val num_cols : _ t -> int
 
-
 (** {3 Dataframe Creation} *)
 
 (** [create named_columns] returns a new dataframe based on the columns
@@ -38,56 +37,56 @@ val create_exn : (string * Column.packed) list -> [ `unfiltered ] t
 (** [of_rows1 (column_name, column_type) elements] creates a dataframe with
     a single column based on [elements].
 *)
-val of_rows1 : (string * ('a, _) Array_intf.t) -> 'a list -> [ `unfiltered ] t Or_error.t
+val of_rows1 : string * ('a, _) Array_intf.t -> 'a list -> [ `unfiltered ] t Or_error.t
 
 (** [of_rows1_exn] is similar to [of_rows1] but raises an exception on errors.
 *)
-val of_rows1_exn : (string * ('a, _) Array_intf.t) -> 'a list -> [ `unfiltered ] t
+val of_rows1_exn : string * ('a, _) Array_intf.t -> 'a list -> [ `unfiltered ] t
 
 (** [of_rows2 (col_name1, col_type1) (col_name2, col_type2) elements]
     creates a dataframe with a single column based on [elements].
 *)
 val of_rows2
-  :  (string * ('a, _) Array_intf.t)
-  -> (string * ('b, _) Array_intf.t)
+  :  string * ('a, _) Array_intf.t
+  -> string * ('b, _) Array_intf.t
   -> ('a * 'b) list
   -> [ `unfiltered ] t Or_error.t
 
 (** [of_rows2_exn] is similar to [of_rows2] but raises an exception on errors.
 *)
 val of_rows2_exn
-  :  (string * ('a, _) Array_intf.t)
-  -> (string * ('b, _) Array_intf.t)
+  :  string * ('a, _) Array_intf.t
+  -> string * ('b, _) Array_intf.t
   -> ('a * 'b) list
   -> [ `unfiltered ] t
 
 val of_rows3
-  :  (string * ('a, _) Array_intf.t)
-  -> (string * ('b, _) Array_intf.t)
-  -> (string * ('c, _) Array_intf.t)
+  :  string * ('a, _) Array_intf.t
+  -> string * ('b, _) Array_intf.t
+  -> string * ('c, _) Array_intf.t
   -> ('a * 'b * 'c) list
   -> [ `unfiltered ] t Or_error.t
 
 val of_rows3_exn
-  :  (string * ('a, _) Array_intf.t)
-  -> (string * ('b, _) Array_intf.t)
-  -> (string * ('c, _) Array_intf.t)
+  :  string * ('a, _) Array_intf.t
+  -> string * ('b, _) Array_intf.t
+  -> string * ('c, _) Array_intf.t
   -> ('a * 'b * 'c) list
   -> [ `unfiltered ] t
 
 val of_rows4
-  :  (string * ('a, _) Array_intf.t)
-  -> (string * ('b, _) Array_intf.t)
-  -> (string * ('c, _) Array_intf.t)
-  -> (string * ('d, _) Array_intf.t)
+  :  string * ('a, _) Array_intf.t
+  -> string * ('b, _) Array_intf.t
+  -> string * ('c, _) Array_intf.t
+  -> string * ('d, _) Array_intf.t
   -> ('a * 'b * 'c * 'd) list
   -> [ `unfiltered ] t Or_error.t
 
 val of_rows4_exn
-  :  (string * ('a, _) Array_intf.t)
-  -> (string * ('b, _) Array_intf.t)
-  -> (string * ('c, _) Array_intf.t)
-  -> (string * ('d, _) Array_intf.t)
+  :  string * ('a, _) Array_intf.t
+  -> string * ('b, _) Array_intf.t
+  -> string * ('c, _) Array_intf.t
+  -> string * ('d, _) Array_intf.t
   -> ('a * 'b * 'c * 'd) list
   -> [ `unfiltered ] t
 
@@ -95,13 +94,13 @@ val of_rows4_exn
     have been copied. Note that this is not a deep-copy: column elements
     are shared which may have some consequences if they are mutable.
 *)
-val copy : _ t -> [`unfiltered ] t
+val copy : _ t -> [ `unfiltered ] t
 
 (** [concat ts] returns the concatenation of all dataframes in [ts].
     This returns an error if the dataframes in [ts] don't all have
     the same column names and types.
 *)
-val concat : _ t list -> [`unfiltered ] t Or_error.t
+val concat : _ t list -> [ `unfiltered ] t Or_error.t
 
 val concat_exn : _ t list -> [ `unfiltered ] t
 
@@ -121,10 +120,18 @@ val get_column_exn : [ `unfiltered ] t -> string -> Column.packed
     An error is returned if there is already a column with that name in [t]
     or if column [c]'s length does not match the dataframe length.
 *)
-val add_column : [`unfiltered] t -> name:string -> (_, _) Column.t -> [ `unfiltered] t Or_error.t
+val add_column
+  :  [ `unfiltered ] t
+  -> name:string
+  -> (_, _) Column.t
+  -> [ `unfiltered ] t Or_error.t
 
 (** [add_column_exn] is similar to [add_column] but raises on errors. *)
-val add_column_exn : [`unfiltered] t -> name:string -> (_, _) Column.t -> [ `unfiltered] t
+val add_column_exn
+  :  [ `unfiltered ] t
+  -> name:string
+  -> (_, _) Column.t
+  -> [ `unfiltered ] t
 
 (** [column_names t] returns the list of names of columns appearing in [t].
 *)
@@ -153,6 +160,7 @@ val filter_columns_exn : 'a t -> names:string list -> 'a t
 
 (** {3 Pretty Printing } *)
 val to_string : ?headers_only:bool -> _ t -> string
+
 val to_aligned_rows : ?max_length:int -> _ t -> string list
 val print : ?out_channel:Stdio.Out_channel.t -> ?max_length:int -> _ t -> unit
 
@@ -174,6 +182,7 @@ val print : ?out_channel:Stdio.Out_channel.t -> ?max_length:int -> _ t -> unit
 *)
 module R : sig
   type nonrec 'a t
+
   include Applicative.S with type 'a t := 'a t
   include Applicative.Let_syntax with type 'a t := 'a t
 
@@ -181,6 +190,7 @@ module R : sig
       the column named [column_name] if it matches [array_intf].
   *)
   val column : ('a, 'b) Array_intf.t -> string -> 'a t
+
   val int : string -> int t
   val float : string -> float t
   val string : string -> string t
@@ -195,7 +205,7 @@ val filter : _ t -> bool R.t -> [ `filtered ] t
     [t]. This creates a newly allocated column only containing the
     filtered elements from the initial dataframe.
 *)
-val map : _ t -> ('a, 'b) Array_intf.t -> 'a R.t ->  ('a, 'b) Column.t
+val map : _ t -> ('a, 'b) Array_intf.t -> 'a R.t -> ('a, 'b) Column.t
 
 (** Similar to [map] but using a single column only. *)
 val map_one
@@ -211,14 +221,21 @@ val map_one
     applying [f] to each row in [t].
 *)
 val map_and_add_column
- : [ `unfiltered] t -> name:string -> ('a, 'b) Array_intf.t -> 'a R.t -> [ `unfiltered ] t Or_error.t
+  :  [ `unfiltered ] t
+  -> name:string
+  -> ('a, 'b) Array_intf.t
+  -> 'a R.t
+  -> [ `unfiltered ] t Or_error.t
 
 val map_and_add_column_exn
- : [ `unfiltered] t -> name:string -> ('a, 'b) Array_intf.t -> 'a R.t -> [ `unfiltered ] t
+  :  [ `unfiltered ] t
+  -> name:string
+  -> ('a, 'b) Array_intf.t
+  -> 'a R.t
+  -> [ `unfiltered ] t
 
 (** [iter t f] applies [f] to all the rows in [t] in order. *)
-val iter : _ t -> unit R.t ->  unit
-
+val iter : _ t -> unit R.t -> unit
 
 (** [fold t ~init ~f] folds over filtered rows of [t] in order.
 *)
@@ -248,10 +265,7 @@ val sort_by : ?reverse:bool -> _ t -> name:string -> [ `unfiltered ] t
     The current implementation uses a polymorphic hashtbl so may have issues
     with complex or mutable types.
 *)
-val group
-  :  _ t
-  -> 'a R.t
-  -> ('a * [ `filtered ] t) list
+val group : _ t -> 'a R.t -> ('a * [ `filtered ] t) list
 
 (** {3 Handling columns with specific types } *)
 
@@ -280,5 +294,4 @@ end
 (** {3 Misc } *)
 
 val filter_ : 'a t -> 'a Filter.t
-
 val to_filtered : _ t -> [ `filtered ] t

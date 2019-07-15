@@ -336,7 +336,8 @@ let%expect_test _ =
       in
       let df = Df.concat_exn [ df2; Df.to_filtered df; df2 ] in
       Df.print df;
-      [%expect {|
+      [%expect
+        {|
         --- --- -----------
           e  pi  sum_n 1/n!
         --- --- -----------
