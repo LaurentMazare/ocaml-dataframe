@@ -185,8 +185,8 @@ let filter_columns (type a) (t : a t) ~names =
   let columns, unknown_names =
     List.partition_map names ~f:(fun name ->
         match Map.find t.columns name with
-        | Some column -> `Fst (name, column)
-        | None -> `Snd name)
+        | Some column -> First (name, column)
+        | None -> Second name)
   in
   if not (List.is_empty unknown_names)
   then
