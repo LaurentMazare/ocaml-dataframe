@@ -351,8 +351,7 @@ let sort (type a) (t : a t) f ~compare =
     match t.filter with
     | No_filter len -> Array.init len ~f:(fun index -> f ~index, index)
     | Filter filter ->
-      Bool_array.indexes filter ~value:true
-      |> Array.map ~f:(fun index -> f ~index, index)
+      Bool_array.indexes filter ~value:true |> Array.map ~f:(fun index -> f ~index, index)
   in
   Array.sort indexes ~compare:(fun (a1, _) (a2, _) -> compare a1 a2);
   let indexes = Array.map indexes ~f:snd in
