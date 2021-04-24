@@ -6,14 +6,14 @@ let col_e1 = "e"
 let col_e2 = "sum_n 1/n!"
 
 let with_df ~f =
-  let pi = Column.of_array N.int [| 3; 1; 4; 1; 5; 9; 2; 6; 5 |] in
-  let e = Column.of_array N.float [| 2.; 7.; 1.; 8.; 2.; 8.; 1.; 8.; 2. |] in
+  let pi = Column.of_array N.intarr [| 3; 1; 4; 1; 5; 9; 2; 6; 5 |] in
+  let e = Column.of_array N.floatarr [| 2.; 7.; 1.; 8.; 2.; 8.; 1.; 8.; 2. |] in
   let df = Df.create_exn [ col_e1, P e; col_pi, P pi; col_e2, P e ] in
   f df
 
-let int = Df.R.column Native_array.int
-let float = Df.R.column Native_array.float
-let string = Df.R.column Native_array.string
+let int = Df.R.column N.intarr
+let float = Df.R.column N.floatarr
+let string = Df.R.column N.stringarr
 
 let%expect_test _ =
   with_df ~f:(fun df ->
@@ -118,7 +118,7 @@ let%expect_test _ =
         Df.map_and_add_column_exn
           df
           ~name:"e^2 + pi"
-          N.float
+          N.floatarr
           Df.R.(
             let+ pi = int col_pi
             and+ e = float col_e1 in
@@ -242,8 +242,8 @@ let%expect_test _ =
       Stdio.printf
         "%d %d %f\n%!"
         sum_pi
-        (Df.Int.sum df ~name:col_pi)
-        (Df.Int.mean df ~name:col_pi |> Option.value ~default:Float.nan);
+        (N.Int.sum df ~name:col_pi)
+        (N.Int.mean df ~name:col_pi |> Option.value ~default:Float.nan);
       [%expect {| 36 36 4.000000 |}];
       let sum_e_nrows =
         Df.R.(
@@ -255,7 +255,7 @@ let%expect_test _ =
         "%d %f %f\n%!"
         nrows
         sum_e
-        (Df.Float.mean df ~name:col_e1 |> Option.value ~default:Float.nan);
+        (N.Float.mean df ~name:col_e1 |> Option.value ~default:Float.nan);
       [%expect {| 9 39.000000 4.333333 |}])
 
 let%expect_test _ =
@@ -278,7 +278,12 @@ let%expect_test _ =
          2.          2.
         |}];
       let column =
-        Df.map_one df ~name:col_e1 ~src:N.float ~dst:N.string ~f:(Printf.sprintf "%.2f")
+        Df.map_one
+          df
+          ~name:col_e1
+          ~src:N.floatarr
+          ~dst:N.stringarr
+          ~f:(Printf.sprintf "%.2f")
       in
       Column.to_string column |> Stdio.printf "%s\n%!";
       [%expect
@@ -295,11 +300,9 @@ let%expect_test _ =
 
 let%expect_test _ =
   let str_column =
-    Column.of_array
-      Native_array.string
-      [| "one"; "two"; "three"; "four"; "two"; "two"; "four" |]
+    Column.of_array N.stringarr [| "one"; "two"; "three"; "four"; "two"; "two"; "four" |]
   in
-  let const_column = Column.create Native_array.int 42 ~len:(Column.length str_column) in
+  let const_column = Column.create N.intarr 42 ~len:(Column.length str_column) in
   let df = Df.create_exn [ "s", P str_column; "i", P const_column ] in
   Df.print df;
   [%expect
@@ -315,9 +318,9 @@ let%expect_test _ =
      42    two
      42   four |}];
   let value_counts =
-    Df.String.value_counts df ~name:"s"
+    N.String.value_counts df ~name:"s"
     |> Map.to_alist
-    |> Df.of_rows2_exn ("value", N.string) ("cnt", N.int)
+    |> Df.of_rows2_exn ("value", N.stringarr) ("cnt", N.intarr)
   in
   Df.print value_counts;
   [%expect
