@@ -238,10 +238,6 @@ module R = struct
     in
     Staged.stage (fun ~index -> Column.get column index)
 
-  let int = column Native_array.int
-  let float = column Native_array.float
-  let string = column Native_array.string
-
   module A = Applicative.Make (AB)
   include A
 
@@ -482,10 +478,12 @@ let incr = function
    [max]) ?
 *)
 module Float_ = struct
+  let col = R.column Native_array.float
+
   let sum (type a) (t : a t) ~name =
     let f =
       let open R in
-      let+ v = float name in
+      let+ v = col name in
       fun acc -> acc +. v
     in
     fold t ~init:0. ~f
@@ -495,23 +493,25 @@ module Float_ = struct
     let nrows = length t in
     if nrows = 0 then None else Some (sum /. Float.of_int nrows)
 
-  let min (type a) (t : a t) ~name = reduce t (R.float name) ~f:Float.min
-  let max (type a) (t : a t) ~name = reduce t (R.float name) ~f:Float.max
+  let min (type a) (t : a t) ~name = reduce t (col name) ~f:Float.min
+  let max (type a) (t : a t) ~name = reduce t (col name) ~f:Float.max
 
   let value_counts (type a) (t : a t) ~name =
     let f =
       let open R in
-      let+ v = float name in
+      let+ v = col name in
       fun acc -> Map.change acc v ~f:incr
     in
     fold t ~init:(Map.empty (module Float)) ~f
 end
 
 module Int_ = struct
+  let col = R.column Native_array.int
+
   let sum (type a) (t : a t) ~name =
     let f =
       let open R in
-      let+ v = int name in
+      let+ v = col name in
       fun acc -> acc + v
     in
     fold t ~init:0 ~f
@@ -521,26 +521,27 @@ module Int_ = struct
     let nrows = length t in
     if nrows = 0 then None else Some (Float.of_int sum /. Float.of_int nrows)
 
-  let min (type a) (t : a t) ~name = reduce t (R.int name) ~f:Int.min
-  let max (type a) (t : a t) ~name = reduce t (R.int name) ~f:Int.max
+  let min (type a) (t : a t) ~name = reduce t (col name) ~f:Int.min
+  let max (type a) (t : a t) ~name = reduce t (col name) ~f:Int.max
 
   let value_counts (type a) (t : a t) ~name =
     let f =
       let open R in
-      let+ v = int name in
+      let+ v = col name in
       fun acc -> Map.change acc v ~f:incr
     in
     fold t ~init:(Map.empty (module Int)) ~f
 end
 
 module String_ = struct
-  let min (type a) (t : a t) ~name = reduce t (R.string name) ~f:String.min
-  let max (type a) (t : a t) ~name = reduce t (R.string name) ~f:String.max
+  let col = R.column Native_array.string
+  let min (type a) (t : a t) ~name = reduce t (col name) ~f:String.min
+  let max (type a) (t : a t) ~name = reduce t (col name) ~f:String.max
 
   let value_counts (type a) (t : a t) ~name =
     let f =
       let open R in
-      let+ v = string name in
+      let+ v = col name in
       fun acc -> Map.change acc v ~f:incr
     in
     fold t ~init:(Map.empty (module String)) ~f

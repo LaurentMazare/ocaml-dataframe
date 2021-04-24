@@ -192,10 +192,6 @@ module R : sig
       the column named [column_name] if it matches [array_intf].
   *)
   val column : ('a, 'b) Array_intf.t -> string -> 'a t
-
-  val int : string -> int t
-  val float : string -> float t
-  val string : string -> string t
 end
 
 (** [filter t f] applies a filter to dataframe [t] and returns

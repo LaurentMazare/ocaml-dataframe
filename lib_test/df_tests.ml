@@ -11,6 +11,10 @@ let with_df ~f =
   let df = Df.create_exn [ col_e1, P e; col_pi, P pi; col_e2, P e ] in
   f df
 
+let int = Df.R.column Native_array.int
+let float = Df.R.column Native_array.float
+let string = Df.R.column Native_array.string
+
 let%expect_test _ =
   with_df ~f:(fun df ->
       Df.print df;
@@ -149,7 +153,7 @@ let%expect_test _ =
 
 let%expect_test _ =
   with_df ~f:(fun df ->
-      let grouped = Df.group df (Df.R.int col_pi) in
+      let grouped = Df.group df (int col_pi) in
       let grouped = List.sort grouped ~compare:Caml.compare in
       List.iter grouped ~f:(fun (key, df) ->
           Stdio.printf "> %d\n%!" key;
@@ -198,8 +202,8 @@ let%expect_test _ =
         Df.group
           df
           Df.R.(
-            let+ pi = Df.R.int col_pi
-            and+ e = Df.R.float col_e1 in
+            let+ pi = int col_pi
+            and+ e = float col_e1 in
             (pi + Float.to_int e) % 2)
       in
       let grouped = List.sort grouped ~compare:Caml.compare in
@@ -332,7 +336,7 @@ let%expect_test _ =
         Df.filter
           df
           Df.R.(
-            let+ pi = Df.R.int col_pi in
+            let+ pi = int col_pi in
             pi = 1)
       in
       let df = Df.concat_exn [ df2; Df.to_filtered df; df2 ] in

@@ -14,7 +14,7 @@ let () =
     Df.filter
       df
       Df.R.(
-        let+ pi = Df.R.int col_pi in
+        let+ pi = (column Native_array.int) col_pi in
         pi = 1)
   in
   List.iter (Df.to_aligned_rows filtered_df) ~f:Stdio.print_endline;
@@ -23,8 +23,8 @@ let () =
       filtered_df
       N.float
       Df.R.(
-        let+ pi = Df.R.int col_pi
-        and+ e = Df.R.float col_e2 in
+        let+ pi = (column Native_array.int) col_pi
+        and+ e = (column Native_array.float) col_e2 in
         Float.of_int pi +. e)
   in
   Stdio.printf "> %d\n%!" (Df.length df);
@@ -33,9 +33,15 @@ let () =
     Df.map
       df
       N.float
-      Df.R.(map2 (int col_pi) (float col_e2) ~f:(fun pi e -> Float.of_int pi +. e))
+      Df.R.(
+        map2
+          (column Native_array.int col_pi)
+          (column Native_array.float col_e2)
+          ~f:(fun pi e -> Float.of_int pi +. e))
   in
   Stdio.printf "> %d\n%!" (Df.length df);
   Stdio.print_endline (Column.to_string sum_df);
-  let sorted_df = Df.sort df (Df.R.int col_pi) ~compare:Int.compare in
+  let sorted_df =
+    Df.sort df Df.R.((column Native_array.int) col_pi) ~compare:Int.compare
+  in
   List.iter (Df.to_aligned_rows sorted_df) ~f:Stdio.print_endline
