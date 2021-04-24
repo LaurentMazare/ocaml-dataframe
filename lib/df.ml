@@ -185,8 +185,8 @@ let filter_columns (type a) (t : a t) ~names =
   let columns, unknown_names =
     List.partition_map names ~f:(fun name ->
         match Map.find t.columns name with
-        | Some column -> `Fst (name, column)
-        | None -> `Snd name)
+        | Some column -> First (name, column)
+        | None -> Second name)
   in
   if not (List.is_empty unknown_names)
   then
@@ -203,33 +203,20 @@ let filter_columns_exn (type a) (t : a t) ~names =
 
 (* Applicative module for filtering, mapping, etc. *)
 module R = struct
-  type nonrec 'a t_ = packed -> (index:int -> 'a) Staged.t
+  module AB = struct
+    type 'a t = packed -> (index:int -> 'a) Staged.t
 
-  module A = Applicative.Make (struct
-    type 'a t = 'a t_
+    let return x _df = Staged.stage (fun ~index:_ -> x)
 
-    let return a _df = Staged.stage (fun ~index:_ -> a)
-
-    let apply t1 t2 df =
-      let t1 = Staged.unstage (t1 df) in
-      let t2 = Staged.unstage (t2 df) in
-      Staged.stage (fun ~index -> (t1 ~index) (t2 ~index))
+    let apply f x df =
+      let f = Staged.unstage (f df) in
+      let x = Staged.unstage (x df) in
+      Staged.stage (fun ~index -> (f ~index) (x ~index))
 
     let map = `Define_using_apply
-  end)
-
-  module App = struct
-    type 'a t = 'a t_
-
-    include A
   end
 
-  module Open_on_rhs_intf = struct
-    module type S = Applicative.S
-  end
-
-  include App
-  include Applicative.Make_let_syntax (App) (Open_on_rhs_intf) (App)
+  include AB
 
   (* We probably don't need to pass a full array_intf here, a witness
      for the element type would be enough.
@@ -251,12 +238,12 @@ module R = struct
     in
     Staged.stage (fun ~index -> Column.get column index)
 
-  let int = column Native_array.int
-  let float = column Native_array.float
-  let string = column Native_array.string
-end
+  module A = Applicative.Make (AB)
+  include A
 
-open R.Let_syntax
+  let ( let+ ) x f = map x ~f
+  let ( and+ ) = both
+end
 
 let filter (type a) (t : a t) (f : bool R.t) =
   let f = Staged.unstage (f (P t)) in
@@ -351,8 +338,7 @@ let sort (type a) (t : a t) f ~compare =
     match t.filter with
     | No_filter len -> Array.init len ~f:(fun index -> f ~index, index)
     | Filter filter ->
-      Bool_array.indexes filter ~value:true
-      |> Array.map ~f:(fun index -> f ~index, index)
+      Bool_array.indexes filter ~value:true |> Array.map ~f:(fun index -> f ~index, index)
   in
   Array.sort indexes ~compare:(fun (a1, _) (a2, _) -> compare a1 a2);
   let indexes = Array.map indexes ~f:snd in
@@ -482,80 +468,3 @@ let to_filtered : type a. a t -> [ `filtered ] t =
   | Filter _ -> t
   | No_filter len ->
     { columns = t.columns; filter = Filter (Bool_array.create true ~len) }
-
-let incr = function
-  | None -> Some 1
-  | Some v -> Some (v + 1)
-
-(* TODO: the [Float_] and [Int_] modules are very similar, use a functor
-   instead ([M.Elt] contains the [compare] function needed for [min] and
-   [max] ?
-*)
-module Float_ = struct
-  let sum (type a) (t : a t) ~name =
-    let f =
-      [%map_open
-        let v = R.float name in
-        fun acc -> acc +. v]
-    in
-    fold t ~init:0. ~f
-
-  let mean (type a) (t : a t) ~name =
-    let sum = sum t ~name in
-    let nrows = length t in
-    if nrows = 0 then None else Some (sum /. Float.of_int nrows)
-
-  let min (type a) (t : a t) ~name = reduce t (R.float name) ~f:Float.min
-  let max (type a) (t : a t) ~name = reduce t (R.float name) ~f:Float.max
-
-  let value_counts (type a) (t : a t) ~name =
-    let f =
-      [%map_open
-        let v = R.float name in
-        fun acc -> Map.change acc v ~f:incr]
-    in
-    fold t ~init:(Map.empty (module Float)) ~f
-end
-
-module Int_ = struct
-  let sum (type a) (t : a t) ~name =
-    let f =
-      [%map_open
-        let v = R.int name in
-        fun acc -> acc + v]
-    in
-    fold t ~init:0 ~f
-
-  let mean (type a) (t : a t) ~name =
-    let sum = sum t ~name in
-    let nrows = length t in
-    if nrows = 0 then None else Some (Float.of_int sum /. Float.of_int nrows)
-
-  let min (type a) (t : a t) ~name = reduce t (R.int name) ~f:Int.min
-  let max (type a) (t : a t) ~name = reduce t (R.int name) ~f:Int.max
-
-  let value_counts (type a) (t : a t) ~name =
-    let f =
-      [%map_open
-        let v = R.int name in
-        fun acc -> Map.change acc v ~f:incr]
-    in
-    fold t ~init:(Map.empty (module Int)) ~f
-end
-
-module String_ = struct
-  let min (type a) (t : a t) ~name = reduce t (R.string name) ~f:String.min
-  let max (type a) (t : a t) ~name = reduce t (R.string name) ~f:String.max
-
-  let value_counts (type a) (t : a t) ~name =
-    let f =
-      [%map_open
-        let v = R.string name in
-        fun acc -> Map.change acc v ~f:incr]
-    in
-    fold t ~init:(Map.empty (module String)) ~f
-end
-
-module Float = Float_
-module Int = Int_
-module String = String_

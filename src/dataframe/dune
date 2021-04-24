@@ -1,6 +1,0 @@
-(library
-  (name dataframe)
-  (public_name dataframe)
-  (libraries base csv stdio)
-  (flags :standard -w -66)
-  (preprocess (pps ppx_let)))

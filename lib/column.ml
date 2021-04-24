@@ -25,13 +25,6 @@ let of_array : type a b. (a, b) Array_intf.t -> a array -> (a, b) t =
   let (module M) = mod_ in
   of_data mod_ (M.of_array vs)
 
-let create_int = create Native_array.int
-let create_float = create Native_array.float
-let create_string = create Native_array.string
-let of_int_array = of_array Native_array.int
-let of_float_array = of_array Native_array.float
-let of_string_array = of_array Native_array.string
-
 let copy : type a b. ?filter:Bool_array.t -> (a, b) t -> (a, b) t =
  fun ?filter t ->
   let (module M) = t.mod_ in
