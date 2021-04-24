@@ -203,33 +203,20 @@ let filter_columns_exn (type a) (t : a t) ~names =
 
 (* Applicative module for filtering, mapping, etc. *)
 module R = struct
-  type nonrec 'a t_ = packed -> (index:int -> 'a) Staged.t
+  module AB = struct
+    type 'a t = packed -> (index:int -> 'a) Staged.t
 
-  module A = Applicative.Make (struct
-    type 'a t = 'a t_
+    let return x _df = Staged.stage (fun ~index:_ -> x)
 
-    let return a _df = Staged.stage (fun ~index:_ -> a)
-
-    let apply t1 t2 df =
-      let t1 = Staged.unstage (t1 df) in
-      let t2 = Staged.unstage (t2 df) in
-      Staged.stage (fun ~index -> (t1 ~index) (t2 ~index))
+    let apply f x df =
+      let f = Staged.unstage (f df) in
+      let x = Staged.unstage (x df) in
+      Staged.stage (fun ~index -> (f ~index) (x ~index))
 
     let map = `Define_using_apply
-  end)
-
-  module App = struct
-    type 'a t = 'a t_
-
-    include A
   end
 
-  module Open_on_rhs_intf = struct
-    module type S = Applicative.S
-  end
-
-  include App
-  include Applicative.Make_let_syntax (App) (Open_on_rhs_intf) (App)
+  include AB
 
   (* We probably don't need to pass a full array_intf here, a witness
      for the element type would be enough.
@@ -254,9 +241,13 @@ module R = struct
   let int = column Native_array.int
   let float = column Native_array.float
   let string = column Native_array.string
-end
 
-open R.Let_syntax
+  module A = Applicative.Make (AB)
+  include A
+
+  let ( let+ ) x f = map x ~f
+  let ( and+ ) = both
+end
 
 let filter (type a) (t : a t) (f : bool R.t) =
   let f = Staged.unstage (f (P t)) in
@@ -493,9 +484,9 @@ let incr = function
 module Float_ = struct
   let sum (type a) (t : a t) ~name =
     let f =
-      [%map_open
-        let v = R.float name in
-        fun acc -> acc +. v]
+      let open R in
+      let+ v = float name in
+      fun acc -> acc +. v
     in
     fold t ~init:0. ~f
 
@@ -509,9 +500,9 @@ module Float_ = struct
 
   let value_counts (type a) (t : a t) ~name =
     let f =
-      [%map_open
-        let v = R.float name in
-        fun acc -> Map.change acc v ~f:incr]
+      let open R in
+      let+ v = float name in
+      fun acc -> Map.change acc v ~f:incr
     in
     fold t ~init:(Map.empty (module Float)) ~f
 end
@@ -519,9 +510,9 @@ end
 module Int_ = struct
   let sum (type a) (t : a t) ~name =
     let f =
-      [%map_open
-        let v = R.int name in
-        fun acc -> acc + v]
+      let open R in
+      let+ v = int name in
+      fun acc -> acc + v
     in
     fold t ~init:0 ~f
 
@@ -535,9 +526,9 @@ module Int_ = struct
 
   let value_counts (type a) (t : a t) ~name =
     let f =
-      [%map_open
-        let v = R.int name in
-        fun acc -> Map.change acc v ~f:incr]
+      let open R in
+      let+ v = int name in
+      fun acc -> Map.change acc v ~f:incr
     in
     fold t ~init:(Map.empty (module Int)) ~f
 end
@@ -548,9 +539,9 @@ module String_ = struct
 
   let value_counts (type a) (t : a t) ~name =
     let f =
-      [%map_open
-        let v = R.string name in
-        fun acc -> Map.change acc v ~f:incr]
+      let open R in
+      let+ v = string name in
+      fun acc -> Map.change acc v ~f:incr
     in
     fold t ~init:(Map.empty (module String)) ~f
 end

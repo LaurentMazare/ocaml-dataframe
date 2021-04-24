@@ -1,6 +1,5 @@
 open Base
 open Dataframe
-open Df.R.Let_syntax
 
 let col_pi = "pi"
 let col_e1 = "e"
@@ -33,9 +32,9 @@ let%expect_test _ =
       let df =
         Df.filter
           df
-          [%map_open
-            let pi = Df.R.int col_pi in
-            pi = 1]
+          Df.R.(
+            let+ pi = int col_pi in
+            pi = 1)
       in
       Df.print df;
       [%expect
@@ -87,10 +86,10 @@ let%expect_test _ =
         Df.sort
           df
           ~compare:Caml.compare
-          [%map_open
-            let pi = Df.R.int col_pi
-            and e = Df.R.float col_e1 in
-            pi, e]
+          Df.R.(
+            let+ pi = int col_pi
+            and+ e = float col_e1 in
+            pi, e)
       in
       Df.print df;
       [%expect
@@ -116,10 +115,10 @@ let%expect_test _ =
           df
           ~name:"e^2 + pi"
           N.float
-          [%map_open
-            let pi = Df.R.int col_pi
-            and e = Df.R.float col_e1 in
-            (e *. e) +. Float.of_int pi]
+          Df.R.(
+            let+ pi = int col_pi
+            and+ e = float col_e1 in
+            (e *. e) +. Float.of_int pi)
       in
       Df.print df;
       [%expect
@@ -142,9 +141,9 @@ let%expect_test _ =
   with_df ~f:(fun df ->
       Df.iter
         df
-        [%map_open
-          let pi = Df.R.int col_pi in
-          Stdio.printf "%d " pi];
+        Df.R.(
+          let+ pi = int col_pi in
+          Stdio.printf "%d " pi);
       Stdio.printf "\n%!";
       [%expect {| 3 1 4 1 5 9 2 6 5 |}])
 
@@ -198,10 +197,10 @@ let%expect_test _ =
       let grouped =
         Df.group
           df
-          [%map_open
-            let pi = Df.R.int col_pi
-            and e = Df.R.float col_e1 in
-            (pi + Float.to_int e) % 2]
+          Df.R.(
+            let+ pi = Df.R.int col_pi
+            and+ e = Df.R.float col_e1 in
+            (pi + Float.to_int e) % 2)
       in
       let grouped = List.sort grouped ~compare:Caml.compare in
       List.iter grouped ~f:(fun (key, df) ->
@@ -231,9 +230,9 @@ let%expect_test _ =
 let%expect_test _ =
   with_df ~f:(fun df ->
       let sum_pi =
-        [%map_open
-          let pi = Df.R.int col_pi in
-          fun acc -> acc + pi]
+        Df.R.(
+          let+ pi = int col_pi in
+          fun acc -> acc + pi)
       in
       let sum_pi = Df.fold df ~init:0 ~f:sum_pi in
       Stdio.printf
@@ -243,9 +242,9 @@ let%expect_test _ =
         (Df.Int.mean df ~name:col_pi |> Option.value ~default:Float.nan);
       [%expect {| 36 36 4.000000 |}];
       let sum_e_nrows =
-        [%map_open
-          let e = Df.R.float col_e1 in
-          fun (acc_sum, acc_cnt) -> acc_sum +. e, acc_cnt + 1]
+        Df.R.(
+          let+ e = float col_e1 in
+          fun (acc_sum, acc_cnt) -> acc_sum +. e, acc_cnt + 1)
       in
       let sum_e, nrows = Df.fold df ~init:(0., 0) ~f:sum_e_nrows in
       Stdio.printf
@@ -330,9 +329,9 @@ let%expect_test _ =
       let df2 =
         Df.filter
           df
-          [%map_open
-            let pi = Df.R.int col_pi in
-            pi = 1]
+          Df.R.(
+            let+ pi = Df.R.int col_pi in
+            pi = 1)
       in
       let df = Df.concat_exn [ df2; Df.to_filtered df; df2 ] in
       Df.print df;

@@ -171,20 +171,22 @@ val print : ?out_channel:Stdio.Out_channel.t -> ?max_length:int -> _ t -> unit
     below.
     For example, filtering all rows where column "col" has a value 42
     and column "col'" has value 3.14 can be done via the following (after
-    opening [R.Let_syntax]):
+    opening [Df.R]):
     {[
       Df.filter df
-        [%map_open
-          let c1 = Df.R.int "col"
-          and c2 = Df.R.int "col'" in
-          c1 = 42 && c2 =. 3.14]
+      Df.R.(
+          let+ c1 = Df.R.int "col"
+          and+ c2 = Df.R.int "col'" in
+          c1 = 42 && c2 =. 3.14)
     |}
 *)
 module R : sig
   type nonrec 'a t
 
   include Applicative.S with type 'a t := 'a t
-  include Applicative.Let_syntax with type 'a t := 'a t
+
+  val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
+  val ( and+ ) : 'a t -> 'b t -> ('a * 'b) t
 
   (** [column array_intf column_name] extracts the values from
       the column named [column_name] if it matches [array_intf].

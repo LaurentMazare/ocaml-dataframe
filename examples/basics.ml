@@ -1,6 +1,5 @@
 open! Base
 open! Dataframe
-open Df.R.Let_syntax
 
 let col_pi = "pi"
 let col_e1 = "e"
@@ -14,19 +13,19 @@ let () =
   let filtered_df =
     Df.filter
       df
-      [%map_open
-        let pi = Df.R.int col_pi in
-        pi = 1]
+      Df.R.(
+        let+ pi = Df.R.int col_pi in
+        pi = 1)
   in
   List.iter (Df.to_aligned_rows filtered_df) ~f:Stdio.print_endline;
   let sum_df =
     Df.map
       filtered_df
       N.float
-      [%map_open
-        let pi = Df.R.int col_pi
-        and e = Df.R.float col_e2 in
-        Float.of_int pi +. e]
+      Df.R.(
+        let+ pi = Df.R.int col_pi
+        and+ e = Df.R.float col_e2 in
+        Float.of_int pi +. e)
   in
   Stdio.printf "> %d\n%!" (Df.length df);
   Stdio.print_endline (Column.to_string sum_df);
