@@ -479,7 +479,7 @@ let incr = function
 
 (* TODO: the [Float_] and [Int_] modules are very similar, use a functor
    instead ([M.Elt] contains the [compare] function needed for [min] and
-   [max] ?
+   [max]) ?
 *)
 module Float_ = struct
   let sum (type a) (t : a t) ~name =
@@ -544,6 +544,15 @@ module String_ = struct
       fun acc -> Map.change acc v ~f:incr
     in
     fold t ~init:(Map.empty (module String)) ~f
+end
+
+module type BASICTYPE = sig
+  type elt
+  type comparator_witness
+
+  val min : _ t -> name:string -> elt option
+  val max : _ t -> name:string -> elt option
+  val value_counts : _ t -> name:string -> (elt, int, comparator_witness) Map.t
 end
 
 module Float = Float_
