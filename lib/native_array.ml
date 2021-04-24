@@ -118,9 +118,7 @@ module String = Make (struct
 end)
 
 let int = (module Int : Array_intf.S with type Elt.t = int and type t = int array)
-
-let float =
-  (module Float : Array_intf.S with type Elt.t = float and type t = float array)
+let float = (module Float : Array_intf.S with type Elt.t = float and type t = float array)
 
 let string =
   (module String : Array_intf.S with type Elt.t = string and type t = string array)

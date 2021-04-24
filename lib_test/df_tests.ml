@@ -291,9 +291,11 @@ let%expect_test _ =
 
 let%expect_test _ =
   let str_column =
-    Column.of_string_array [| "one"; "two"; "three"; "four"; "two"; "two"; "four" |]
+    Column.of_array
+      Native_array.string
+      [| "one"; "two"; "three"; "four"; "two"; "two"; "four" |]
   in
-  let const_column = Column.create_int 42 ~len:(Column.length str_column) in
+  let const_column = Column.create Native_array.int 42 ~len:(Column.length str_column) in
   let df = Df.create_exn [ "s", P str_column; "i", P const_column ] in
   Df.print df;
   [%expect
